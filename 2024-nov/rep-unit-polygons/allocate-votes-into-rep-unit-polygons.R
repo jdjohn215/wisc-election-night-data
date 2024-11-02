@@ -5,7 +5,7 @@ library(sf)
 
 ltsb.2020 <- st_read("~/Dropbox/Projects/2024/January/wi-legis-map-proposals-2024/election-data/2012-2020/2012-2020_Election_Data_with_2020_Wards/2012-2020_Election_Data_with_2020_Wards.shp") |>
   rename(ltsb_ward_fips = GEOID)
-rep.units.2024 <- st_read("2024-aug/rep-unit-polygons/rep-units.geojson") |>
+rep.units.2024 <- st_read("2024-nov/rep-unit-polygons/rep-units-nov2024.geojson") |>
   st_transform(crs = st_crs(ltsb.2020)) |>
   mutate(rep_unit_2024 = paste(county, rep_unit, sep = " - "))
 rep.units.2022 <- st_read("~/Dropbox/Projects/2024/January/wi-legis-map-proposals-2024/election-data/ReportingUnitPolygons.geojson") |>
@@ -145,8 +145,9 @@ all.votes.in.2024.rep.units <- rep.units.2024 |>
   mutate(across(.cols = where(is.numeric),
                 .fn = ~replace(.x, is.na(.x), 0))) |>
   st_as_sf()
-st_write(all.votes.in.2024.rep.units, "2024-aug/rep-unit-polygons/rep-unit-polygons-with-votes-2012-2022.geojson")
-write_csv(st_drop_geometry(all.votes.in.2024.rep.units), "2024-aug/rep-unit-polygons/rep-units-2024-with-votes-2012-2022.csv")
+st_write(all.votes.in.2024.rep.units, "2024-nov/rep-unit-polygons/rep-unit-polygons-with-votes-2012-2022.geojson",
+         delete_dsn = T)
+write_csv(st_drop_geometry(all.votes.in.2024.rep.units), "2024-nov/rep-unit-polygons/rep-units-2024-with-votes-2012-2022.csv")
 
 ################################################################################
 # allocate 2024 reporting units into census tracts
@@ -176,7 +177,7 @@ cw.2024.to.tracts <- l2.points.in.tracts |>
   mutate(prop_of_rep_unit_2024 = l2_count/sum(l2_count)) |>
   ungroup()
 
-write_csv(cw.2024.to.tracts, "2024-aug/rep-unit-polygons/rep-units-2024_to_tracts-cw.csv")
+write_csv(cw.2024.to.tracts, "2024-nov/rep-unit-polygons/rep-units-2024_to_tracts-cw.csv")
 
 weighted.mean(cw.2024.to.tracts$prop_of_rep_unit_2024, w = cw.2024.to.tracts$l2_count)
 Hmisc::wtd.quantile(cw.2024.to.tracts$prop_of_rep_unit_2024, weights = cw.2024.to.tracts$l2_count, probs = 0.5)
