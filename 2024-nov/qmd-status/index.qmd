@@ -5,7 +5,9 @@ format: html
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = F, message = F, echo = F)
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(stringr)
 library(sf)
 library(leaflet)
 library(gt)
