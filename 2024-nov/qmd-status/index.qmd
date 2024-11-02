@@ -1,0 +1,63 @@
+---
+title: "Nov 2024 - Wisconsin Election Results"
+format: html
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, message = F, echo = F)
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(gt)
+
+df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geojson"))
+
+df.state <- df |>
+  st_drop_geometry() |>
+  summarise(across(ends_with("24"), sum),
+            across(ends_with("20"), sum)) |>
+  mutate(across(where(is.numeric), round),
+         PREmarginv24 = PREDEM24 - PREREP24,
+         PREmarginp24 = (PREDEM24/PRETOT24 - PREREP24/PRETOT24)*100,
+         USSmarginv24 = USSDEM24 - USSREP24,
+         USSmarginp24 = (USSDEM24/USSTOT24 - USSREP24/USSTOT24)*100,
+         PREmarginv20 = PREDEM20 - PREREP20,
+         PREmarginp20 = (PREDEM20/PRETOT20 - PREREP20/PRETOT20)*100)
+```
+
+
+```{r}
+df.state |>
+  pivot_longer(cols = everything()) |>
+  separate(name, into = c("office", "party","year"), sep = c(3, -2)) |>
+  mutate(office = paste0(office, " 20", year)) |>
+  select(-year) |>
+  pivot_wider(names_from = party, values_from = value) |>
+  gt(rowname_col = "office") |>
+  fmt_number(columns = c(TOT, DEM, REP, marginv), decimals = 0) |>
+  fmt_number(columns = marginp, decimals = 1, pattern = "{x} pt.") |>
+  sub_missing() |>
+  tab_style(style = cell_text(color = "red", weight = "bold"),
+            locations = cells_body(columns = marginv,
+                                   rows = marginv < 0)) |>
+  tab_style(style = cell_text(color = "red", weight = "bold"),
+            locations = cells_body(columns = marginp,
+                                   rows = marginp < 0)) |>
+  tab_style(style = cell_text(color = "blue", weight = "bold"),
+            locations = cells_body(columns = marginv,
+                                   rows = marginv > 0)) |>
+  tab_style(style = cell_text(color = "blue", weight = "bold"),
+            locations = cells_body(columns = marginp,
+                                   rows = marginp > 0)) |>
+  tab_header(title = "Election results in collected reporting units",
+             subtitle = "see map for coverage area")
+```
+
+
+```{r}
+df |>
+  st_transform(crs = 4326) |>
+  leaflet() |>
+  addProviderTiles(provider = providers$CartoDB.Positron) |>
+  addPolygons(label = ~reporting_unit)
+```
