@@ -30,7 +30,8 @@ expand_dash <- function(wardstring){
 #   derived from WEC and LTSB sources
 rep.units.shp <- st_read("2024-nov/rep-unit-polygons/rep-unit-polygons-with-votes-2012-2022.geojson") |>
   select(rep_unit, county, ctv, municipality, MCD_FIPS) |>
-  mutate(municipality = str_remove_all(municipality, coll("."))) |>
+  mutate(municipality = str_remove_all(municipality, coll(".")),
+         across(where(is.character), str_to_upper)) |>
   st_drop_geometry() |>
   tibble()
 
@@ -139,7 +140,7 @@ rep.units.mcd.join |>
 # join the ward-based reporting units
 rep.units.shp.wards <- rep.units.shp |>
   anti_join(rep.units.mcd.join) |>
-  mutate(wards = word(rep_unit, 2, sep = "\\bWARDS\\b|\\bWARD\\b"),
+  mutate(wards = word(rep_unit, 2, sep = "\\bWARDS\\b|\\bWARD\\b|\\bWD\\b"),
          wards = str_remove_all(wards, " "),
          wards = case_when(
            wards == "8-7" ~ "7-8",
