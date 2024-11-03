@@ -52,7 +52,9 @@ madison.rep.units <- dane.wards |>
 updated.rep.units <- rep.unit.polygons |>
   filter(MCD_FIPS != "5502548000") |>
   rmapshaper::ms_erase(erase = madison.rep.units, remove_slivers = T) |>
-  bind_rows(madison.rep.units)
+  bind_rows(madison.rep.units) |>
+  mutate(municipality = str_remove_all(municipality, coll(".")),
+         across(where(is.character), str_to_upper))
 
 st_write(updated.rep.units, "2024-nov/rep-unit-polygons/rep-units-nov2024.geojson",
          delete_dsn = T)
