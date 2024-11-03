@@ -51,6 +51,7 @@ combined.results <- uss.votes |>
   select(county, ctv, municipality, MCD_FIPS, reporting_unit, ends_with("24"),
          ends_with("22"), ends_with("20"), ends_with("18"), ends_with("16"),
          ends_with("14"), ends_with("12"))
+nrow(combined.results) == nrow(matched.polygons)
 
 st_write(combined.results, "2024-nov/processed/matched-reporting-unit-results.geojson",
          delete_dsn = T)
