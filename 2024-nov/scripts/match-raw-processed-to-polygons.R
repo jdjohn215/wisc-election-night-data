@@ -30,8 +30,6 @@ expand_dash <- function(wardstring){
 #   derived from WEC and LTSB sources
 rep.units.shp <- st_read("2024-nov/rep-unit-polygons/rep-unit-polygons-with-votes-2012-2022.geojson") |>
   select(rep_unit, county, ctv, municipality, MCD_FIPS) |>
-  mutate(municipality = str_remove_all(municipality, coll(".")),
-         across(where(is.character), str_to_upper)) |>
   st_drop_geometry() |>
   tibble()
 
@@ -175,4 +173,5 @@ polygons <- st_read("2024-nov/rep-unit-polygons/rep-unit-polygons-with-votes-201
 polygons.matched <- all.matched.reporting.units |>
   inner_join(polygons) |>
   st_as_sf()
+nrow(polygons.matched) == nrow(all.matched.reporting.units)
 st_write(polygons.matched, "2024-nov/processed/matched-polygons.geojson", delete_dsn = T)
