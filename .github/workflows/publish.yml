@@ -30,16 +30,11 @@ jobs:
         with:
           packages: |
             any::tidyr
-            any::ggplot2
-            any::forcats
-            any::stringr
-            any::purrr
-            any::readr
             any::dplyr
             any::gt
             any::sf
             any::leaflet
-            any::english
+            any::here
 
       - name: Render and Publish
         uses: quarto-dev/quarto-actions/publish@v2
