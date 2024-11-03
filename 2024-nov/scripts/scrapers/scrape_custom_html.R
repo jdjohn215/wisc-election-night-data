@@ -349,7 +349,8 @@ read_wood <- function(precinct_page_url, save_output = T){
            across(where(is.character), str_to_upper),
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF "),
-           municipality = word(municipality, 1, sep = "\\bWARD"))
+           municipality = word(municipality, 1, sep = "\\bWARD\\b|\\bWARDS\\b|\\bW[0-9]"),
+           municipality = str_replace(municipality, "WISC RAPIDS", "WISCONSIN RAPIDS"))
   
   #################################################
   # save the output with the timestamped file name
