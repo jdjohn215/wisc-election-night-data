@@ -168,7 +168,7 @@ read_oneida(latest_file("Oneida", "raw", T), sheetno = 7)
 pdf_reader_a(latest_file("Outagamie", "raw", T))
 
 #download_returns("Ozaukee")
-pdf_reader_b(latest_file("Ozaukee", "raw-export", T), 1, 149)
+pdf_reader_b(latest_file("Ozaukee", "raw-export", T), 1, 60)
 
 #download_returns("Pepin")
 read_pepin(latest_file("Pepin", "raw-export", T))
