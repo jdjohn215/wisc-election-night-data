@@ -54,7 +54,16 @@ updated.rep.units <- rep.unit.polygons |>
   rmapshaper::ms_erase(erase = madison.rep.units, remove_slivers = T) |>
   bind_rows(madison.rep.units) |>
   mutate(municipality = str_remove_all(municipality, coll(".")),
-         across(where(is.character), str_to_upper))
+         across(where(is.character), str_to_upper)) |>
+  # combine the two Village of Vernon rep units into a single rep unit
+  #   so as to match the new format
+  mutate(rep_unit = if_else(MCD_FIPS == "5513382575",
+                            "VILLAGE VERNON WARDS 1 - 11",
+                            rep_unit)) |>
+  group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  st_make_valid() |>
+  summarise(.groups = "drop") |>
+  st_make_valid()
 
 updated.rep.units.no.overlaps <- st_difference(updated.rep.units)
 
