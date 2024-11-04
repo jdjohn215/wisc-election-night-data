@@ -9,7 +9,7 @@ library(jsonlite)
 # county directory
 file.directory <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1hqq-_DTu8EmwC_0apYy2IjQL5SAry82kKlXYgBU2Yvs/edit?gid=0#gid=0") |>
   mutate(needs_xlsx_export = if_else(is.na(needs_xlsx_export), "no", needs_xlsx_export))
-
+2
 ################################################################################
 # Load all the source files
 source("2024-nov/scripts/scrapers/pdf_reader_a.R")
@@ -226,13 +226,8 @@ pdf_reader_b(latest_file("Walworth", "raw-export", T), 1, 145)
 #download_returns("Washington")
 pdf_reader_b2(latest_file("Washington", "raw-export", T), 2, 222)
 
-
-# waukesha link is dead, so copy over previously downloaded file
-# scrape_waukesha(file.directory$file_url[file.directory$county == "Waukesha"])
-# read_csv("~/Dropbox/Projects/2024/August/aug13-primary/raw-returns/all-races.csv") |>
-#   filter(county == "Waukesha") |>
-#   select(reporting_unit = rep_unit, contest = office, candidate = name, votes, county) |>
-#   write_csv(paste0("2024-nov/raw-processed/Waukesha ", str_replace_all(Sys.time(),":", "-"), ".csv"))
+# Waukesha - use list of URLs, one URL to each contest
+scrape_waukesha(file.directory$file_url[file.directory$county == "Waukesha"])
 
 # waupaca file has been taken down, so I copy over previously downloaded version
 #download_returns("Waupaca")

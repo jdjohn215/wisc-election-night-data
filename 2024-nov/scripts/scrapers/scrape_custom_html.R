@@ -224,13 +224,14 @@ scrape_waukesha <- function(electionurl, save_output = T){
                                       names_to = "candidate", values_to = "votes")
                      }) |>
     list_rbind() |>
-    select(reporting_unit = ward, contest, candidate, votes) |>
+    select(reporting_unit = `Reporting Unit`, contest, candidate, votes) |>
     mutate(county = "Waukesha",
            across(where(is.character), str_to_upper),
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "^CITY |^VILLAGE |^TOWN "),
-           municipality = word(municipality, 1, sep = "\\bW[0-9]"),
-           across(where(is.character), str_squish))
+           municipality = word(municipality, 1, sep = "\\bW[0-9]|\\bWARD\\b|\\bWARDS\\b"),
+           across(where(is.character), str_squish)) |>
+    filter(municipality != "TOTALS")
   
   #################################################
   # save the output with the timestamped file name
