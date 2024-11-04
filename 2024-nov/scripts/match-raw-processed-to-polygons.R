@@ -64,6 +64,7 @@ all.orig <- map(.x = processed.files,
     reporting_unit = case_when(
       reporting_unit == "T BLOOMFIELD W 1 & 2" ~ "T BLOOMFIELD", # Waushara reports this inconsistently across tables
       reporting_unit == "CITY OF HARTFORD, DISTRICT 3 WARD 4-7, 13, 16, 18" ~ "CITY OF HARTFORD, DISTRICT 3 WARD 4-7, 13, 16, 18, 19",
+      reporting_unit == "CITY OF NEENAH, DIST 2, WARD 16 AND DIST 3, WARDS 17-19& 24" ~ "CITY OF NEENAH WARDS 16-19,24",
       reporting_unit == "T-ARCADIA W1-3" ~ "T-ARCADIA W1-4",
       TRUE ~ reporting_unit),
     county = case_when(
@@ -152,7 +153,7 @@ rep.units.wards.join <- rep.units.wards |>
   left_join(rep.units.shp.wards)
 not.joined <- rep.units.wards.join |>
   filter(is.na(MCD_FIPS))
-not.joined
+not.joined # can't find any GIS info on these 4 C Oshkosh wards
 ################################################################################
 # combine matched reporting units
 
