@@ -432,62 +432,66 @@ read_waushara <- function(workbookpath, sheetvector, save_output = T){
 ################################################################################
 
 ################################################################################
-read_oconto <- function(workbookpath, sheetno = 2, save_output = T){
-  print("YOU MAY NEED TO REPAIR THE MERGED&CENTERED OFFICE HEADERS")
-  # this function might need to be edited based on the number of rows in the column header
-  orig <- readxl::read_excel(workbookpath, col_names = F, sheet = sheetno,
-                             col_types = "text", .name_repair = "unique_quiet")
+read_oconto <- function(workbookpath, save_output = T){
+  # this function requires custom headers
+  sheet1.orig <- readxl::read_excel(workbookpath, col_names = F, sheet = 5,
+                                    col_types = "text", .name_repair = "unique_quiet")
   
-  # process multi-row header
-  header.start <- 1
-  header.end <-  first(which(str_detect(orig$...2, "Reporting Unit")))
+  headers <- c("candidate", "T Abrams W1-3", "T Bagley W1", "T Brazeau W1-3", "T Breed W1", "T Chase W1-5",
+    "T Doty W1", "T Gillett W1-2", "T How W1-2", "T Lakewood W1", "T Lena W1",
+    "T Lt River W1-2", "T Lt Suamico W1-8", "T Maple Valley W1", "T Morgan W1-2",
+    "T Mountain W1", "T Oconto W1-3", "T Oconto Falls W1-2", "T Pensaukee W1-2",
+    "T Riverview W1-2", "T Spruce W1-2", "T Stiles W1-2", "T Townsend W1",
+    "T Underhill W1", "V Lena W1", "V Pulaski W5", "V Suring W1", "C Gillett W1-3",
+    "C Oconto W1-7", "C Oconto Falls W1-6", "TOTALS")
   
+  startrow <- min(which(str_detect(sheet1.orig$...1, "President")))
   
-  colnames <- orig[header.start:header.end,] |>
-    mutate(rownum = row_number()) |>
-    pivot_longer(cols = -rownum) |>
-    pivot_wider(names_from = rownum, values_from = value) |>
-    select(-name) |>
-    mutate(`4` = if_else(`4` == "Reporting Units",
-                         true = `4`,
-                         false = str_remove_all(`4`, " "))) |>
-    mutate(across(.cols = everything(), .fns = ~if_else(
-      str_count(.x, " ") == nchar(str_remove_all(.x, " ")) -1,
-      true = str_remove_all(.x, " "),
-      false = .x)
-    )) |>
-    mutate(`1` = replace(`1`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`), "NA"),
-           `2` = replace(`2`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`), "NA"),
-           `3` = if_else(is.na(`3`) & !is.na(`2`),
-                         true = `2`,
-                         false = `3`),
-           `1` = zoo::na.locf(`1`, na.rm = F),
-           `2` = zoo::na.locf(`2`, na.rm = F),
-           `3` = zoo::na.locf(`3`, na.rm = F)) |>
-    unite("header", everything(), sep = "_", na.rm = T) |>
-    mutate(header = str_replace(header, "Rep. to the Assembly_DA|Rep. to the Assembly_District Attorney", "DA"))
+  sheet1 <- sheet1.orig |>
+    filter(row_number() >= startrow) |>
+    set_names(headers) |>
+    mutate(contest = if_else(row_number() == 1 | lag(candidate, 1) == "Undervotes",
+                             true = candidate, false = NA),
+           contest = zoo::na.locf(contest)) |>
+    select(contest, everything()) |>
+    filter(contest != candidate,
+           ! candidate %in% c("Totals", "Overvotes", "Undervotes")) |>
+    pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit",
+                 values_to = "votes")
   
-  dtemp <- readxl::read_excel(workbookpath, col_types = "text", sheet = sheetno,
-                              skip = header.end-1, col_names = colnames$header,
-                              .name_repair = "unique_quiet") |>
-    filter(row_number() > 1) |>
-    select(-1) |>
-    rename(reporting_unit = 1) |>
-    filter(str_detect(reporting_unit, "Total|TOTAL", negate = T)) |>
-    pivot_longer(cols = -c(reporting_unit),
-                 names_to = "contestcandidate", values_to = "votes") |>
-    mutate(contestcandidate = str_replace_all(str_squish(contestcandidate), coll("\r\n"), " ")) |>
-    separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
-    filter(!is.na(votes)) |>
-    type_convert() |>
-    mutate(candidate = str_remove(candidate, "...[1-9]$"),
+  sheet2 <- readxl::read_excel(workbookpath, col_names = headers, sheet = 6,
+                               col_types = "text", .name_repair = "unique_quiet") |>
+    mutate(contest = if_else(row_number() == 1 | lag(candidate, 1) == "Undervotes",
+                             true = candidate, false = NA),
+           contest = zoo::na.locf(contest)) |>
+    select(contest, everything()) |>
+    filter(contest != candidate,
+           ! candidate %in% c("Totals", "Overvotes", "Undervotes")) |>
+    pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit",
+                 values_to = "votes")
+  
+  sheet3 <- readxl::read_excel(workbookpath, col_names = headers, sheet = 7,
+                               col_types = "text", .name_repair = "unique_quiet") |>
+    mutate(contest = if_else(row_number() == 1 | lag(candidate, 1) == "Undervotes",
+                             true = candidate, false = NA),
+           contest = zoo::na.locf(contest)) |>
+    select(contest, everything()) |>
+    filter(contest != candidate,
+           ! candidate %in% c("Totals", "Overvotes", "Undervotes")) |>
+    pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit",
+                 values_to = "votes")
+  
+  dtemp <- bind_rows(sheet1, sheet2, sheet3) |>
+    mutate(across(where(is.character), ~str_remove_all(.x, coll("\n"))),
            county = "Oconto",
            across(where(is.character), str_to_upper),
            ctv = str_sub(reporting_unit, 1, 1),
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^T |^V |^C "),
            municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
-           municipality = str_replace(municipality, "\\bLT\\b", "LITTLE"))
+           municipality = str_replace(municipality, "\\bLT\\b", "LITTLE"),
+           across(where(is.character), str_squish)) |>
+    filter(municipality != "TOTALS")
   
   if(save_output == TRUE){
     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
@@ -645,7 +649,7 @@ read_sawyer <- function(workbookpath, save_output = T){
     sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
                         col_types = "text", .name_repair = "unique_quiet")
     sheet2 <- sheet |>
-      filter(str_detect(sheet$...1, "^Sawyer County Election Results|^Page ", negate = T)) |>
+      filter(str_detect(sheet$...1, "^Sawyer County Election Results|^Page|^UNOFFICIAL", negate = T)) |>
       janitor::remove_empty("cols")
     start.row <- which(str_detect(sheet2$...1, "TOWN OF BASS LAKE"))
     colnames <- sheet2 |>
@@ -658,17 +662,19 @@ read_sawyer <- function(workbookpath, save_output = T){
       mutate(colname = str_replace_all(colname, coll("\n"), " "),
              colname = if_else(colname == "OFFICE_Description_Candidate",
                                true = "reporting_unit",
-                               false = colname))
+                               false = colname),
+             colname = str_squish(colname))
     sheet2 |>
       filter(row_number() >= start.row) |>
       setNames(colnames$colname) |>
       select(-which(duplicated(colnames$colname))) |>
+      rename(reporting_unit = 1) |>
       filter(str_detect(reporting_unit, "^Totals", negate = T)) |>
       pivot_longer(cols = -c(reporting_unit),
                    names_to = "contestcandidate", values_to = "votes") |>
       mutate(contestcandidate = str_replace_all(str_squish(contestcandidate), coll("\r\n"), " ")) |>
       separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
-      filter(!is.na(votes))
+      filter(votes != "x" | is.na(votes))
   }
   
   dtemp <- map(.x = 1:length(sawyer.sheets),
@@ -884,7 +890,7 @@ read_marathon <- function(pdfpath, save_output = T){
                                               col_types = cols(.default = "c"))
     
     reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
-                                               "AUGUST 13, 2024|AUGUST 13,2024")) + 1]
+                                               "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 1]
     race.start <- min(which(str_detect(page$X1, "Vote For")))-1
     
     page |>

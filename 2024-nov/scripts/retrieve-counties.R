@@ -44,7 +44,7 @@ read_buffalo(latest_file("Buffalo", "raw-export", T))
 # download_returns("Burnett") # haven't processed this one yet
 
 #download_returns("Calumet")
-pdf_reader_d(latest_file("Calumet", "raw-export", T), 1, 52)
+pdf_reader_d(latest_file("Calumet", "raw-export", T), 1, 75)
 
 # download_returns("Chippewa") # might have to manually download and timestamp this one
 #   this won't work with zeroes
@@ -186,7 +186,7 @@ pdf_reader_a(latest_file("Portage", "raw", T))
 # Price - reporting unit data probably not available
 
 #download_returns("Racine") # likely must download manually
-pdf_reader_b(latest_file("Racine", "raw-export", T), 1, 249)
+pdf_reader_b(latest_file("Racine", "raw-export", T), 1, 100)
 
 #download_returns("Richland")
 read_richland(latest_file("Richland", "raw-export", T))
@@ -238,7 +238,7 @@ pdf_reader_d(latest_file("Waupaca", "raw-export", T), 1, 99)
 read_waushara(latest_file("Waushara", "raw-export", T), 1:6)
 
 #download_returns("Winnebago")
-pdf_reader_b2(latest_file("Winnebago", "raw-export", T), 1, 369)
+pdf_reader_b2(latest_file("Winnebago", "raw-export", T), 1, 112)
 
 read_wood(file.directory$file_url[file.directory$county == "Wood"])
 

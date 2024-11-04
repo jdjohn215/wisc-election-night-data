@@ -15,7 +15,7 @@ pdf_reader_a <- function(pdfpath, save_output = T){
                                               col_types = cols(.default = "c"))
     
     reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
-                                               "AUGUST 13, 2024|AUGUST 13,2024")) + 1]
+                                               "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 1]
     race.start <- min(which(str_detect(page$X1, "Vote For")))-1
     
     page |>
@@ -24,7 +24,21 @@ pdf_reader_a <- function(pdfpath, save_output = T){
                               false = NA)) |>
       filter(row_number() >= race.start) |>
       mutate(office = zoo::na.locf(office),
-             X1 = str_squish(X1)) |>
+             X1 = str_squish(X1),
+             # this repairs situations where RFK is split across multiple lines (as in Columbia county)
+             rfk = case_when(
+               X1 == "IND Robert F. Kennedy, Jr. / Nicole" &
+                 lead(X1, 2) == "Shanahan" ~ "rfk1",
+               lag(X1, 1) == "IND Robert F. Kennedy, Jr. / Nicole" &
+                 lead(X1, 1) == "Shanahan" ~ "rfk3",
+               X1 == "Shanahan" ~ "rfk2",
+               TRUE ~ NA
+             )) |>
+      mutate(X1 = case_when(
+        rfk == "rfk1" ~ paste(X1, lead(X1, 2), lead(X1, 1)),
+        TRUE ~ X1)) |>
+      filter(! rfk %in% c("rfk2","rfk3")) |>
+      select(-rfk) |>
       group_by(office) |>
       filter(row_number() > 3) |>
       ungroup() |>
