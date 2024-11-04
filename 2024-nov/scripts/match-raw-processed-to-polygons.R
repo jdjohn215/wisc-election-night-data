@@ -175,3 +175,10 @@ polygons.matched <- all.matched.reporting.units |>
   st_as_sf()
 nrow(polygons.matched) == nrow(all.matched.reporting.units)
 st_write(polygons.matched, "2024-nov/processed/matched-polygons.geojson", delete_dsn = T)
+
+# complete polygons with NA for those that haven't yet been processed and matched
+complete.polygons.match.status <- all.matched.reporting.units |>
+  full_join(polygons) |>
+  st_as_sf()
+nrow(complete.polygons.match.status) == nrow(rep.units.shp)
+st_write(complete.polygons.match.status, "2024-nov/processed/all-polygons-with-match-status.geojson", delete_dsn = T)

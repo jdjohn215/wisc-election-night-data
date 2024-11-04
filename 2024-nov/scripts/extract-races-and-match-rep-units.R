@@ -4,7 +4,8 @@ library(tidyverse)
 library(sf)
 
 all.raw <- read_csv("2024-nov/processed/all-raw-processed.csv")
-matched.polygons <- st_read("2024-nov/processed/matched-polygons.geojson")
+complete.polygons <- st_read("2024-nov/processed/all-polygons-with-match-status.geojson")
+matched.polygons <- complete.polygons |> filter(!is.na(reporting_unit))
 
 uss.contest.names <- all.raw |>
   filter(str_detect(candidate, "HOVDE")) |>
@@ -54,4 +55,15 @@ combined.results <- uss.votes |>
 nrow(combined.results) == nrow(matched.polygons)
 
 st_write(combined.results, "2024-nov/processed/matched-reporting-unit-results.geojson",
+         delete_dsn = T)
+
+# complete rep units results, with NA for rep units that do not yet have 2024 data
+full.combined.results <- uss.votes |>
+  inner_join(pre.votes) |>
+  full_join(complete.polygons) |>
+  st_as_sf() |>
+  select(county, ctv, municipality, MCD_FIPS, reporting_unit, ends_with("24"),
+         ends_with("22"), ends_with("20"), ends_with("18"), ends_with("16"),
+         ends_with("14"), ends_with("12"))
+st_write(full.combined.results, "2024-nov/processed/reporting-unit-results-all.geojson",
          delete_dsn = T)
