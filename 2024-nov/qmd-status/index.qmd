@@ -15,8 +15,8 @@ df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geoj
 
 df.state <- df |>
   st_drop_geometry() |>
-  summarise(across(ends_with("24"), sum),
-            across(ends_with("20"), sum)) |>
+  summarise(across(ends_with("24"), ~sum(.x, na.rm = T)),
+            across(ends_with("20"), ~sum(.x, na.rm = T))) |>
   mutate(across(where(is.numeric), round),
          PREmarginv24 = PREDEM24 - PREREP24,
          PREmarginp24 = (PREDEM24/PRETOT24 - PREREP24/PRETOT24)*100,
