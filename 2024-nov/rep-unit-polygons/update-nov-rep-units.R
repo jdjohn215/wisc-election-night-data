@@ -56,5 +56,7 @@ updated.rep.units <- rep.unit.polygons |>
   mutate(municipality = str_remove_all(municipality, coll(".")),
          across(where(is.character), str_to_upper))
 
-st_write(updated.rep.units, "2024-nov/rep-unit-polygons/rep-units-nov2024.geojson",
+updated.rep.units.no.overlaps <- st_difference(updated.rep.units)
+
+st_write(updated.rep.units.no.overlaps, "2024-nov/rep-unit-polygons/rep-units-nov2024.geojson",
          delete_dsn = T)
