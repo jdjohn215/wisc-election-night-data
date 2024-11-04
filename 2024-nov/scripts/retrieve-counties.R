@@ -38,7 +38,8 @@ read_bayfield(latest_file("Bayfield", "raw-export", T), c(2:7))
 #download_returns("Brown")
 pdf_reader_c(latest_file("Brown", "raw-export", T))
 
-# Buffalo - appears not to publish reporting unit data
+#download_returns("Buffalo")
+read_buffalo(latest_file("Buffalo", "raw-export", T))
 
 # download_returns("Burnett") # haven't processed this one yet
 

@@ -997,6 +997,53 @@ read_iowa <- function(workbookpath, save_output = T){
 ################################################################################
 
 ################################################################################
+read_buffalo <- function(workbookpath, save_output = T){
+  sheetvector <- excel_sheets(workbookpath)
+  
+  process_sheet <- function(sheetindex){
+    sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = T,
+                        .name_repair = "unique_quiet", skip = 1)
+    
+    sheet |>
+      rename(candidate = 1) |>
+      filter(!is.na(candidate),
+             str_detect(candidate, "Undervotes|Registered Write-in|Provisional", negate = T),
+             ! candidate %in% c("FEDERAL","STATE REFERENDUM","COUNTY","LEGISLATIVE AND STATE",
+                                "CONGRESSIONAL")) |>
+      mutate(candidate = str_squish(candidate)) |>
+      mutate(contest = if_else(str_detect(candidate, "^County Clerk|^County Treasurer|^Register of Deeds|^Eligible Voting Age|^State Senator Dist. 10|^Representative to the Assembly Dist. 29|^District Attorney|^United States Senator|^Representative in Congress|^President/Vice President"),
+                               true = candidate, false = NA),
+             contest = zoo::na.locf(contest)) |>
+      select(contest, everything()) |>
+      select(-c(PARTY, TOTALS, `PRECINCTS REPORTING`)) |>
+      pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
+      mutate(across(where(is.character), str_squish))
+  }
+  
+  dtemp <- map(.x = sheetvector,
+               .f = ~process_sheet(.x)) |>
+    list_rbind() |>
+    type_convert() |>
+    mutate(county = "Buffalo",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_replace(reporting_unit, "^TW", "TOWN"),
+           ctv = str_sub(reporting_unit, 1, 1),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           reporting_unit = str_remove_all(reporting_unit, coll("-")),
+           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove_all(municipality, coll("-")),
+           across(where(is.character), str_squish)) |>
+    filter(municipality != "TOTAL")
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
+
+################################################################################
 read_manitowoc <- function(workbookpath, save_output = T){
   sheet1 <- googlesheets4::read_sheet(workbookpath, sheet = 1)
   sheet2 <- googlesheets4::read_sheet(workbookpath, sheet = 2)
