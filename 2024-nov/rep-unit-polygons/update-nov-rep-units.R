@@ -1,6 +1,7 @@
 rm(list = ls())
 
 library(tidyverse)
+library(sf)
 
 # expand a list of numbers including dashes into full list
 expand_dash <- function(wardstring){
@@ -72,20 +73,39 @@ mke.cnty.replacements <- wards.august |>
   summarise(.groups = "drop") |>
   st_make_valid() |>
   st_transform(crs = st_crs(rep.unit.polygons))
-
+################################################################################
+# The City of Oshkosh added some wards, thanks to annexations
+winnebago <- st_read("2024-nov/rep-unit-polygons/Winnebago/WinnebagoCountyWards_11_05_24.shp") |>
+  mutate(MCD_FIPS = paste0("55139", COUSUBFP),
+         ctv = str_sub(MUNICIPALI, 1, 1),
+         municipality = word(MUNICIPALI, 3, -1),
+         county = "WINNEBAGO",
+         WardNumber = str_squish(WARDID)) |>
+  group_by(county, ctv, municipality, MCD_FIPS, WardNumber) |>
+  summarise(.groups = "drop") |>
+  st_make_valid()
+winnebago.replacements <- winnebago |>
+  filter(MCD_FIPS == "5513960500") |>
+  mutate(rep_unit = paste("CITY OF OSHKOSH WARD", WardNumber)) |> 
+  select(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  st_transform(crs = st_crs(rep.unit.polygons)) |>
+  mutate(across(where(is.character), str_to_upper))
 ################################################################################
 # remove the outdated rep unit polygons and replace with the new ones
 updated.rep.units <- rep.unit.polygons |>
+  # replace the Madison wards
   filter(MCD_FIPS != "5502548000") |>
   rmapshaper::ms_erase(erase = madison.rep.units, remove_slivers = T) |>
   bind_rows(madison.rep.units) |>
-  mutate(municipality = str_remove_all(municipality, coll(".")),
-         across(where(is.character), str_to_upper)) |>
   # replace the Milwaukee county wards
   filter(! rep_unit %in% c("VILLAGE OF BAYSIDE WARDS 1,2-3,4-5",
                            "VILLAGE OF RIVER HILLS WARDS 1-2")) |>
   rmapshaper::ms_erase(mke.cnty.replacements) |>
   bind_rows(mke.cnty.replacements) |>
+  # replace the Winnebago county wards
+  filter(MCD_FIPS != "5513960500") |>
+  rmapshaper::ms_erase(erase = winnebago.replacements, remove_slivers = T) |>
+  bind_rows(winnebago.replacements) |>
   # combine the two Village of Vernon rep units into a single rep unit
   #   so as to match the new format
   mutate(rep_unit = if_else(MCD_FIPS == "5513382575",
@@ -94,7 +114,9 @@ updated.rep.units <- rep.unit.polygons |>
   group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
   st_make_valid() |>
   summarise(.groups = "drop") |>
-  st_make_valid()
+  st_make_valid() |>
+  mutate(municipality = str_remove_all(municipality, coll(".")),
+         across(where(is.character), str_to_upper))
 
 updated.rep.units.no.overlaps <- st_difference(updated.rep.units)
 
