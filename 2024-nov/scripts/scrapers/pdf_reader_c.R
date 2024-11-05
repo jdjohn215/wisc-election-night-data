@@ -5,7 +5,13 @@ pdf_reader_c <- function(workbookpath, save_output = T){
   # this function reads an individual sheet
   read_sheet <- function(sheetindex, workbookpath){
     sheet <- read_excel(workbookpath, sheet = sheetindex,
-                        col_names = F, .name_repair = "unique_quiet")
+                        col_names = F, .name_repair = "unique_quiet") |>
+      # munge problem with Dodge reporting units getting truncated
+      mutate(...1 = case_when(
+        ...1 == "C Beaver Dam" & lead(...1, 1) == "C Beaver Dam W9, 10, 12-15" ~ "CITY OF BEAVER DAM WARDS 8,11,19-20,23,27",
+        ...1 == "C Beaver Dam" & lead(...1, 1) == "C Beaver Dam W25" ~ "CITY OF BEAVER DAM WARDS 17-18,21-22,24",
+        TRUE ~ ...1
+      ))
     
     # the row which reads "VOTE FOR 1"
     votefor1 <- which(sheet$...2 == "VOTE FOR 1")
