@@ -156,7 +156,7 @@ rep.units.wards.join <- rep.units.wards |>
   left_join(rep.units.shp.wards)
 not.joined <- rep.units.wards.join |>
   filter(is.na(MCD_FIPS))
-not.joined # can't find any GIS info on these 2 C Kenosha wards. I think they have no voters, so hopefully I can just drop them later on
+not.joined
 ################################################################################
 # combine matched reporting units
 

@@ -91,6 +91,23 @@ winnebago.replacements <- winnebago |>
   st_transform(crs = st_crs(rep.unit.polygons)) |>
   mutate(across(where(is.character), str_to_upper))
 ################################################################################
+# The City of Kenosah added some wards, thanks to annexations I think
+kenosha <- st_read("2024-nov/rep-unit-polygons/Kenosha") |>
+  mutate(MCD_FIPS = paste0("55059", CountySubF),
+         ctv = str_sub(FULLNAME, 1, 1),
+         municipality = word(FULLNAME, 3, -1),
+         county = "KENOSHA",
+         WardNumber = str_squish(Ward)) |>
+  group_by(county, ctv, municipality, MCD_FIPS, WardNumber) |>
+  summarise(.groups = "drop") |>
+  st_make_valid()
+kenosha.replacements <- kenosha |>
+  filter(MCD_FIPS == "5505939225") |>
+  mutate(rep_unit = paste("CITY OF KENOSHA WARD", WardNumber)) |> 
+  select(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  st_transform(crs = st_crs(rep.unit.polygons)) |>
+  mutate(across(where(is.character), str_to_upper))
+################################################################################
 # remove the outdated rep unit polygons and replace with the new ones
 updated.rep.units <- rep.unit.polygons |>
   # replace the Madison wards
@@ -106,6 +123,10 @@ updated.rep.units <- rep.unit.polygons |>
   filter(MCD_FIPS != "5513960500") |>
   rmapshaper::ms_erase(erase = winnebago.replacements, remove_slivers = T) |>
   bind_rows(winnebago.replacements) |>
+  # replace the Kenosha county wards
+  filter(MCD_FIPS != "5505939225") |>
+  rmapshaper::ms_erase(erase = kenosha.replacements, remove_slivers = T) |>
+  bind_rows(kenosha.replacements) |>
   # combine the two Village of Vernon rep units into a single rep unit
   #   so as to match the new format
   mutate(rep_unit = if_else(MCD_FIPS == "5513382575",
