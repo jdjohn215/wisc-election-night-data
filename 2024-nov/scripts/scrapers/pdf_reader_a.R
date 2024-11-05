@@ -22,7 +22,8 @@ pdf_reader_a <- function(pdfpath, save_output = T){
       mutate(office = if_else(str_detect(lead(X1, 1), "Vote For"),
                               true = str_squish(X1),
                               false = NA)) |>
-      filter(row_number() >= race.start) |>
+      filter(row_number() >= race.start,
+             str_detect(X1, "Precinct Report", negate = T)) |>
       mutate(office = zoo::na.locf(office),
              X1 = str_squish(X1),
              # this repairs situations where RFK is split across multiple lines (as in Columbia county)
