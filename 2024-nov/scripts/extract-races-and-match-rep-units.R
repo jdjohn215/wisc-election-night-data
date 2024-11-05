@@ -54,6 +54,31 @@ combined.results <- uss.votes |>
          ends_with("14"), ends_with("12"))
 nrow(combined.results) == nrow(matched.polygons)
 
+################################################################################
+# create table for each rep unit
+rep_unit_html_table <- function(rowindex, df){
+  df[rowindex,] |>
+    st_drop_geometry() |>
+    select(USSTOT24, USSDEM24, USSREP24, PRETOT24, PREDEM24, PREREP24,
+           PRETOT20, PREDEM20, PREREP20) |>
+    pivot_longer(everything()) |>
+    separate(name, into = c("office","party","year"), sep = c(3,6)) |>
+    mutate(contest = paste0(office, " 20", year)) |>
+    select(contest, party, value) |>
+    pivot_wider(names_from = party, values_from = value) |>
+    mutate(TOT = round(TOT),
+           DEM = round(DEM),
+           REP = round(REP),
+           marginv = round(DEM-REP),
+           marginp = round((DEM/TOT - REP/TOT)*100, 1)) |>
+    knitr::kable(format = "html")
+}
+
+all.tables <- map(.x = 1:nrow(combined.results),
+                  .f = ~rep_unit_html_table(.x, combined.results),
+                  .progress = T)
+saveRDS(all.tables, "2024-nov/qmd-status/rep-unit-html-tables.rds")
+
 st_write(combined.results, "2024-nov/processed/matched-reporting-unit-results.geojson",
          delete_dsn = T)
 

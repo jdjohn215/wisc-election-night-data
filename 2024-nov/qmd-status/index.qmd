@@ -11,7 +11,11 @@ library(sf)
 library(leaflet)
 library(gt)
 
-df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geojson"))
+rep.unit.tables <- readRDS(here::here("2024-nov/qmd-status/rep-unit-html-tables.rds"))
+df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geojson")) |>
+  mutate(table = as.character(rep.unit.tables),
+         label = paste(reporting_unit, "<br>",
+                       table))
 
 df.state <- df |>
   st_drop_geometry() |>
@@ -56,15 +60,18 @@ df.state |>
             locations = cells_body(columns = marginp,
                                    rows = marginp > 0)) |>
   tab_header(title = "Election results in collected reporting units",
-             subtitle = "see map for coverage area") |>
+             subtitle = "see map for coverage area. Absentee ballots may not yet be reflected in the 2024 ward totals.") |>
   tab_source_note("Ward boundaries change between elections. Results from old wards are distributed into the 2024 boundaries based on the number of residents in the overlapping sections.")
 ```
 
 
 ```{r}
+#| column: body-outset
+#| fig-height: 8
 df |>
   st_transform(crs = 4326) |>
   leaflet() |>
   addProviderTiles(provider = providers$CartoDB.Positron) |>
-  addPolygons(label = ~reporting_unit)
+  addPolygons(label = ~lapply(label, htmltools::HTML),
+              weight = 0.5)
 ```
