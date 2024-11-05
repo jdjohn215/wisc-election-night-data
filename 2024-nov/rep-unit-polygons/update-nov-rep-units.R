@@ -46,6 +46,32 @@ madison.rep.units <- dane.wards |>
   summarise(.groups = "drop") |>
   st_make_valid() |>
   st_transform(crs = st_crs(rep.unit.polygons))
+################################################################################
+# two Milwaukee county reporting units from August need to be split
+#   "VILLAGE OF BAYSIDE WARDS 1,2-3,4-5" becomes:
+#     - VILLAGE OF BAYSIDE WARDS 1,3 
+#     - VILLAGE OF BAYSIDE WARDS 2,4,5
+#   "VILLAGE OF RIVER HILLS WARDS 1-2" becomes:
+#     - VILLAGE OF RIVER HILLS WARD 1
+#     - VILLAGE OF RIVER HILLS WARD 1
+wards.august <- st_read("2024-aug/rep-unit-polygons/wards.geojson")
+mke.cnty.replacements <- wards.august |>
+  filter(ward_label %in% c("Bayside - V 0001", "Bayside - V 0002",
+                           "Bayside - V 0003", "Bayside - V 0004",
+                           "Bayside - V 0005", "River Hills - V 0001",
+                           "River Hills - V 0002")) |>
+  mutate(rep_unit = case_when(
+    ward_label %in% c("Bayside - V 0001", "Bayside - V 0003") ~ "VILLAGE OF BAYSIDE WARDS 1,3",
+    ward_label %in% c("Bayside - V 0002", "Bayside - V 0004", "Bayside - V 0005") ~ "VILLAGE OF BAYSIDE WARDS 2,4,5",
+    ward_label %in% c("River Hills - V 0001") ~ "VILLAGE OF RIVER HILLS WARD 1",
+    ward_label %in% c("River Hills - V 0002") ~ "VILLAGE OF RIVER HILLS WARD 2"
+  )) |>
+  mutate(county = "MILWAUKEE",
+         MCD_FIPS = str_sub(WARD_FIPS, 1, 10)) |>
+  group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  summarise(.groups = "drop") |>
+  st_make_valid() |>
+  st_transform(crs = st_crs(rep.unit.polygons))
 
 ################################################################################
 # remove the outdated rep unit polygons and replace with the new ones
@@ -55,6 +81,11 @@ updated.rep.units <- rep.unit.polygons |>
   bind_rows(madison.rep.units) |>
   mutate(municipality = str_remove_all(municipality, coll(".")),
          across(where(is.character), str_to_upper)) |>
+  # replace the Milwaukee county wards
+  filter(! rep_unit %in% c("VILLAGE OF BAYSIDE WARDS 1,2-3,4-5",
+                           "VILLAGE OF RIVER HILLS WARDS 1-2")) |>
+  rmapshaper::ms_erase(mke.cnty.replacements) |>
+  bind_rows(mke.cnty.replacements) |>
   # combine the two Village of Vernon rep units into a single rep unit
   #   so as to match the new format
   mutate(rep_unit = if_else(MCD_FIPS == "5513382575",
