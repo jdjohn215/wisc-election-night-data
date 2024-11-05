@@ -148,9 +148,9 @@ read_manitowoc(file.directory$file_type[file.directory$county == "Manitowoc"])
 #download_returns("Marathon") # likely must download manually
 read_marathon(latest_file("Marathon", "raw", T))
 
-# Marinette - not yet processed
+#download_returns("Marinette")
+read_marinette(latest_file("Marinette", "raw-export", T))
 
-# Marquette - not yet processed
 # download_returns("Marquette") # might have to download and timestamp manually
 read_marquette(latest_file("Marquette", "raw-export", T), sheetvector = c(2,3,7))
 

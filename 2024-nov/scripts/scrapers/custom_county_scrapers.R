@@ -1562,3 +1562,59 @@ read_kenosha <- function(csvurl, save_output = T){
   dtemp
 }
 ################################################################################
+
+################################################################################
+read_marinette <- function(workbookpath, sheetvector = 2:4, save_output = T){
+  process_sheet <- function(sheetindex){
+    sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
+                        .name_repair = "unique_quiet") |>
+      janitor::remove_empty(which = "cols")
+    
+    startrow <- min(which(str_detect(sheet$...1, "^Town|^TOWN")))
+    
+    colnames <- sheet |>
+      select(-1) |>
+      filter(row_number() < startrow-3) |>
+      mutate(rownum = row_number()) |>
+      pivot_longer(cols = -rownum) |>
+      pivot_wider(names_from = rownum, values_from = value) |>
+      mutate(across(.cols = any_of(c("1","2","3")),
+                    .f = ~zoo::na.locf(.x, na.rm = F))) |>
+      select(-name) |>
+      unite("colname", na.rm = T) |>
+      mutate(colname = str_replace_all(colname, coll("\n"), " ")) |>
+      pull(colname)
+    sheet |>
+      filter(row_number() >= startrow) |>
+      set_names(c("reporting_unit", colnames)) |>
+      filter(! reporting_unit %in% c("Total","TOTAL","totals","Totals","TOTALS","Reporting Unit Count"),
+             ! reporting_unit %in% c("TOWNS", "CITIES", "VILLAGES"),
+             !is.na(reporting_unit)) |>
+      pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
+      mutate(candidate = word(contestcandidate, 2, sep = "12_|36_|25_|27_|PRESIDENT_VICE PRESIDENT_"),
+             contest = str_remove(contestcandidate, candidate)) |>
+      select(-contestcandidate)
+  }
+  
+  dtemp <- map(.x = sheetvector,
+               .f = process_sheet) |>
+    list_rbind() |>
+    type_convert() |>
+    mutate(county = "Marinette",
+           across(where(is.character), str_to_upper),
+           ctv = case_when(
+             str_detect(reporting_unit, "^MARINETTE|^NIAGARA|^PESHTIGO") ~ "C",
+             TRUE ~ str_sub(reporting_unit, 1, 1)
+           ),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-"),
+           municipality = word(municipality, 1, sep = " - |\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish))
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
