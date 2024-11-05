@@ -145,6 +145,7 @@ rep.units.shp.wards <- rep.units.shp |>
          wards = case_when(
            wards == "8-7" ~ "7-8",
            rep_unit == "VILLAGE OF HOLMEN WARDS 1-5,12-13" ~ "1-5",
+           rep_unit == "CITY OF WATERTOWN WARDS 3-4" ~ "3,4,23",
            TRUE ~ wards
          )) |>
   rowwise() |>
@@ -185,3 +186,4 @@ complete.polygons.match.status <- all.matched.reporting.units |>
   st_as_sf()
 nrow(complete.polygons.match.status) == nrow(rep.units.shp)
 st_write(complete.polygons.match.status, "2024-nov/processed/all-polygons-with-match-status.geojson", delete_dsn = T)
+

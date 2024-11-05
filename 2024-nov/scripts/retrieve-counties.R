@@ -41,7 +41,8 @@ pdf_reader_c(latest_file("Brown", "raw-export", T))
 #download_returns("Buffalo")
 read_buffalo(latest_file("Buffalo", "raw-export", T))
 
-# download_returns("Burnett") # haven't processed this one yet
+#download_returns("Burnett")
+read_burnett(latest_file("Burnett", "raw-export", T))
 
 #download_returns("Calumet")
 pdf_reader_d(latest_file("Calumet", "raw-export", T), 1, 75)
@@ -222,7 +223,8 @@ read_vernon(latest_file("Vernon", "raw", T))
 #download_returns("Walworth")
 pdf_reader_b(latest_file("Walworth", "raw-export", T), 1, 145)
 
-# Washburn - not yet processed
+#download_returns("Washburn")
+read_washburn(latest_file("Washburn", "raw-export", T))
 
 #download_returns("Washington")
 pdf_reader_b2(latest_file("Washington", "raw-export", T), 2, 222)
