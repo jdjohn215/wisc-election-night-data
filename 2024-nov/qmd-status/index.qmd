@@ -14,7 +14,7 @@ library(gt)
 rep.unit.tables <- readRDS(here::here("2024-nov/qmd-status/rep-unit-html-tables.rds"))
 df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geojson")) |>
   mutate(table = as.character(rep.unit.tables),
-         label = paste(reporting_unit, "<br>",
+         label = paste(county, "COUNTY -", reporting_unit, "<br>",
                        table))
 
 df.state <- df |>
