@@ -1526,3 +1526,39 @@ read_washburn <- function(workbookpath, save_output = T){
   dtemp
 }
 ################################################################################
+
+################################################################################
+read_kenosha <- function(csvurl, save_output = T){
+  kenosha <- read_delim(csvurl, delim = "|")
+  
+  dtemp <- kenosha |>
+    rename(reporting_unit = Ward_Name, municipality = Municipality, contest = Contest,
+           candidate = Candidate, votes = Votes) |>
+    mutate(reporting_unit = paste(municipality, reporting_unit),
+           candidate = paste(Party, candidate)) |>
+    select(municipality, reporting_unit, contest, candidate, votes) |>
+    type_convert() |>
+    mutate(county = "KENOSHA",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           municipality = str_remove_all(municipality, coll(".")),
+           ctv = str_sub(municipality, 1, 1),
+           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^CITY |^VILLAGE |^T |^C |^V "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish),
+           municipality = str_replace(municipality, "BEAVERBROOK", "BEAVER BROOK"))
+  
+  # reformat timestamp
+  timestamp <- str_remove(word(csvurl, -2, -1, sep = "_"), ".csv")
+  
+  reformated.timestamp <- paste0(str_sub(timestamp, 1, 4), "-", str_sub(timestamp, 5,6), "-",
+                                 str_sub(timestamp, 7,8), " ", str_sub(timestamp,-6,-5), "-",
+                                 str_sub(timestamp, -4,-3), "-", str_sub(timestamp, -2, -1))
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/Kenosha ", reformated.timestamp, ".csv"))
+  }
+  dtemp
+}
+################################################################################

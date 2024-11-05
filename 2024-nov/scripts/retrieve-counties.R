@@ -126,8 +126,8 @@ pdf_reader_d(latest_file("Jackson", "raw-export", T), 1, 82)
 
 # Juneau - reporting unit data likely unavailable
 
-#download_returns("Kenosha")
-pdf_reader_c(latest_file("Kenosha", "raw-export", T))
+#download_returns("Kenosha") # this step not needed when downloading directly from Kevin's repo
+read_kenosha(file.directory$file_url[file.directory$county == "Kenosha"])
 
 #download_returns("Kewaunee")
 read_kewaunee(latest_file("Kewaunee", "raw-export", T))
