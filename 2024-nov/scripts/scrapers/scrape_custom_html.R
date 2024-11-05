@@ -231,8 +231,11 @@ scrape_waukesha <- function(electionurl, save_output = T){
            municipality = str_remove(reporting_unit, "^CITY |^VILLAGE |^TOWN "),
            municipality = word(municipality, 1, sep = "\\bW[0-9]|\\bWARD\\b|\\bWARDS\\b"),
            across(where(is.character), str_squish)) |>
-    filter(municipality != "TOTALS")
-  
+    filter(municipality != "TOTALS",
+           # remove this city of milwaukee ward because it is unpopulated 
+           #  and also reported by the MKE Cnty election commission
+           reporting_unit != "CITY MILWAUKEE W317")
+    
   #################################################
   # save the output with the timestamped file name
   if(save_output == T){
