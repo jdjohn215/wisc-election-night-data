@@ -31,12 +31,7 @@ expand_dash <- function(wardstring){
 rep.units.shp <- st_read("2024-nov/rep-unit-polygons/rep-unit-polygons-with-votes-2012-2022.geojson") |>
   select(rep_unit, county, ctv, municipality, MCD_FIPS) |>
   st_drop_geometry() |>
-  tibble() |>
-  # munge as needed
-  mutate(rep_unit = case_when(
-    rep_unit == "VILLAGE OF HOLMEN WARDS 1-5,12-13" ~ "VILLAGE OF HOLMEN WARDS 1-5",
-    TRUE ~ rep_unit
-  ))
+  tibble()
 
 ################################################################################
 # the processed raw election results
@@ -149,6 +144,7 @@ rep.units.shp.wards <- rep.units.shp |>
          wards = str_remove_all(wards, " "),
          wards = case_when(
            wards == "8-7" ~ "7-8",
+           rep_unit == "VILLAGE OF HOLMEN WARDS 1-5,12-13" ~ "1-5",
            TRUE ~ wards
          )) |>
   rowwise() |>
