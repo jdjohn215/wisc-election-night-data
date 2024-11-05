@@ -31,7 +31,12 @@ expand_dash <- function(wardstring){
 rep.units.shp <- st_read("2024-nov/rep-unit-polygons/rep-unit-polygons-with-votes-2012-2022.geojson") |>
   select(rep_unit, county, ctv, municipality, MCD_FIPS) |>
   st_drop_geometry() |>
-  tibble()
+  tibble() |>
+  # munge as needed
+  mutate(rep_unit = case_when(
+    rep_unit == "VILLAGE OF HOLMEN WARDS 1-5,12-13" ~ "VILLAGE OF HOLMEN WARDS 1-5",
+    TRUE ~ rep_unit
+  ))
 
 ################################################################################
 # the processed raw election results
@@ -66,6 +71,7 @@ all.orig <- map(.x = processed.files,
       reporting_unit == "CITY OF HARTFORD, DISTRICT 3 WARD 4-7, 13, 16, 18" ~ "CITY OF HARTFORD, DISTRICT 3 WARD 4-7, 13, 16, 18, 19",
       reporting_unit == "CITY OF NEENAH, DIST 2, WARD 16 AND DIST 3, WARDS 17-19& 24" ~ "CITY OF NEENAH WARDS 16-19,24",
       reporting_unit == "T-ARCADIA W1-3" ~ "T-ARCADIA W1-4",
+      reporting_unit == "VILLAGE OF HOLMEN WARDS 1-" ~ "VILLAGE OF HOLMEN WARDS 1-5",
       TRUE ~ reporting_unit),
     county = case_when(
       reporting_unit == "CITY OF MILWAUKEE WARD 316" ~ "WASHINGTON",
