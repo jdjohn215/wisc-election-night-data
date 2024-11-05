@@ -91,8 +91,8 @@ pdf_reader_b(latest_file("Door", "raw-export", T), 1, 102)
 #download_returns("Douglas")
 pdf_reader_a(latest_file("Douglas", "raw", T))
 
-# Dunn haven't processed this yet
-#   bad primary file format, should be easier to process the election file
+#download_returns("Dunn")
+read_dunn(latest_file("Dunn", "raw-export", T))
 
 #download_returns("Eau Claire") # might have to manually download
 read_eauclaire(latest_file("Eau Claire", "raw-export", T))
@@ -138,7 +138,8 @@ pdf_reader_c(latest_file("La Crosse", "raw-export", T))
 #download_returns("Lafayette")
 pdf_reader_d(latest_file("Lafayette", "raw-export", T), 1, 37)
 
-# Langlade - not yet processed
+#download_returns("Langlade")
+read_langlade(latest_file("Langlade", "raw-export", T))
 
 #download_returns("Lincoln")
 pdf_reader_a(latest_file("Lincoln", "raw", T))
