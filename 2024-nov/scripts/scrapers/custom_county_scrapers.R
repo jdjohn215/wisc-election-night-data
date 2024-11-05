@@ -90,31 +90,39 @@ read_barron <- function(workbookpath, save_output = T){
 
 ################################################################################
 read_clark <- function(workbookpath, save_output = T){
-  sheet <- read_excel(workbookpath, col_names = F,
-                      .name_repair = "unique_quiet")
-  start.row <- which(sheet$...1 == "Beaver")
+  sheetvector <- excel_sheets(workbookpath)
   
-  colnames <- sheet |>
-    filter(row_number() < start.row) |>
-    mutate(rownum = row_number()) |>
-    pivot_longer(cols = -rownum, names_to = "column") |>
-    pivot_wider(names_from = rownum, values_from = value) |>
-    # this will likely need editing for the general election
-    mutate(`1` = zoo::na.locf(`1`, na.rm = F),
-           `2` = zoo::na.locf(`2`, na.rm = F)) |>
-    unite(col = "colname", `2`, `3`, na.rm = T)
+  process_sheet <- function(sheetindex){
+    sheet <- read_excel(workbookpath, col_names = F, sheet = sheetindex,
+                        .name_repair = "unique_quiet")
+    start.row <- which(sheet$...1 == "Beaver")
+    
+    colnames <- sheet |>
+      filter(row_number() < start.row) |>
+      mutate(rownum = row_number()) |>
+      pivot_longer(cols = -rownum, names_to = "column") |>
+      pivot_wider(names_from = rownum, values_from = value) |>
+      # this will likely need editing for the general election
+      mutate(`1` = zoo::na.locf(`1`, na.rm = F),
+             `2` = zoo::na.locf(`2`, na.rm = F)) |>
+      unite(col = "colname", `2`, `3`, na.rm = T)
+    
+    sheet |>
+      filter(row_number() >= start.row) |>
+      set_names(colnames$colname) |>
+      select(unique(colnames$colname)) |>
+      rename(reporting_unit = Municipality) |>
+      select(-contains("Municipality")) |>
+      select(-any_of(c("Votes Cast", "OutStanding Provisionals", "Outstanding Provisionals"))) |>
+      filter(!is.na(reporting_unit),
+             reporting_unit != "Totals") |>
+      pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
+      separate(contestcandidate, into = c("contest", "candidate"), sep = "_(?!.*_)")
+  }
   
-  all.output <- sheet |>
-    filter(row_number() >= start.row) |>
-    set_names(colnames$colname) |>
-    select(unique(colnames$colname)) |>
-    rename(reporting_unit = Municipality) |>
-    select(-contains("Municipality")) |>
-    select(-c(`Votes Cast`, `OutStanding Provisionals`)) |>
-    filter(!is.na(reporting_unit),
-           reporting_unit != "Totals") |>
-    pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
-    separate(contestcandidate, into = c("contest", "candidate"), sep = "_(?!.*_)") |>
+  all.output <- map(.x = sheetvector,
+                    .f = ~process_sheet(.x)) |>
+    list_rbind() |>
     type_convert() |>
     mutate(county = "Clark",
            across(where(is.character), str_to_upper),
@@ -208,22 +216,22 @@ read_polk <- function(workbookpath, save_output = T){
            `2` = replace(`2`, is.na(`1`) & is.na(`2`) & is.na(`3`), "NA"),
            `1` = zoo::na.locf(`1`, na.rm = F),
            `2` = zoo::na.locf(`2`, na.rm = F)) |>
-    unite("header", everything(), sep = "_")
+    unite("header", everything(), sep = "_", na.rm = T)
   
   dtemp <- readxl::read_excel(workbookpath, col_types = "text",
                               skip = header.end-1, col_names = colnames$header,
                               .name_repair = "unique_quiet") |>
-    filter(row_number() > 1) |>
     janitor::remove_empty("cols") |>
-    # drop rows that don't correspond to a row (e.g. totals)
-    rename(wardno = 1, reporting_unit = 2, total_voters = 3, prov_ballots = 4) |>
+    filter(row_number() > 1) |>
+    rename(wardno = 1, reporting_unit = 2, rv = 3, turnout = 4, pturnout = 5, prov_ballots = 6) |>
     filter(!is.na(wardno)) |>
-    select(-c(wardno, prov_ballots, contains("Reporting Units"))) |>
-    pivot_longer(cols = -c(reporting_unit, total_voters),
+    select(-c(wardno, rv, turnout, pturnout, prov_ballots, contains("Reporting Units"),
+              contains("turn out"), contains("Provisional"))) |>
+    pivot_longer(cols = -c(reporting_unit),
                  names_to = "contestcandidate", values_to = "votes") |>
     separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
-    filter(candidate != "NA",
-           !is.na(votes)) |>
+    mutate(contest = if_else(candidate %in% c("Yes","No","v"), str_remove(contest, "_Treasurer"),
+                             str_remove(contest, "^NA_"))) |>
     type_convert() |>
     select(reporting_unit, contest, candidate, votes) |>
     mutate(county = "Polk",
