@@ -128,8 +128,9 @@ read_jackson(latest_file("Jackson", "raw-export", T)) # had to manually edit
 #download_returns("Juneau")
 read_juneau(latest_file("Juneau", "raw-export", T))
 
-#download_returns("Kenosha") # this step not needed when downloading directly from Kevin's repo
-read_kenosha(file.directory$file_url[file.directory$county == "Kenosha"])
+#download_returns("Kenosha")
+#read_kenosha(file.directory$file_url[file.directory$county == "Kenosha"])
+pdf_reader_c(latest_file("Kenosha", "raw-export", T))
 
 #download_returns("Kewaunee")
 read_kewaunee(latest_file("Kewaunee", "raw-export", T))
@@ -138,7 +139,8 @@ read_kewaunee(latest_file("Kewaunee", "raw-export", T))
 pdf_reader_c(latest_file("La Crosse", "raw-export", T))
 
 #download_returns("Lafayette")
-pdf_reader_d(latest_file("Lafayette", "raw-export", T), 1, 37)
+# manually edited XLSX format
+read_lafayette(latest_file("Lafayette", "raw-export", T))
 
 #download_returns("Langlade")
 read_langlade(latest_file("Langlade", "raw-export", T))
@@ -157,7 +159,9 @@ read_marinette(latest_file("Marinette", "raw-export", T), sheetvector = 2:4)
 # download_returns("Marquette") # might have to download and timestamp manually
 read_marquette(latest_file("Marquette", "raw-export", T), sheetvector = c(2,3,4))
 
-# Menominee - reporting unit data probably not available
+#download_returns("Menominee")
+# hand-entered
+read_menominee(latest_file("Menominee", "raw-export", T))
 
 #scrape_milwaukee(file.directory$file_url[file.directory$county == "Milwaukee"])
 

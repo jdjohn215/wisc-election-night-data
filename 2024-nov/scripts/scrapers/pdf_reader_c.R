@@ -22,7 +22,11 @@ pdf_reader_c <- function(workbookpath, save_output = T){
       tibble(reporting_unit = character(),
              race_candidate = character(),
              votes = character())
-    } else{
+    } else if(str_detect(workbookpath, "Kenosha") & is_empty(which(str_detect(sheet$...1, "^T[.]|^City|^V[.]")))){
+      tibble(reporting_unit = character(),
+             race_candidate = character(),
+             votes = character())
+    } else {
       sheet2 <- sheet |> mutate(rownum = row_number()) |> filter(rownum > votefor1)
       startrow <- sheet2 |> filter(str_detect(...1, "^C|^T|^V")) |> pull(rownum) |> min()
       
@@ -33,7 +37,8 @@ pdf_reader_c <- function(workbookpath, save_output = T){
         pivot_wider(names_from = rownum, values_from = value) |>
         filter(column != "...1") |>
         mutate(`1` = zoo::na.locf(`1`),
-               colname = paste(`1`, `2`, sep = "!!")) |>
+               colname = paste(`1`, `2`, sep = "!!"),
+               colname = str_remove_all(colname, coll("\n"))) |>
         pull(colname)
       
       sheet |>
@@ -60,7 +65,8 @@ pdf_reader_c <- function(workbookpath, save_output = T){
            municipality = str_remove(reporting_unit, "VILLAGE OF |TOWN OF |CITY OF |^T |^C |^V |^T-|^C-|^V-"),
            municipality = word(municipality, 1, 1, sep = "\\bW[0-9]|\\bWARD|\\bWD|\\bD[0-9]|\\bW\\b|\\bDISTRICT"),
            across(where(is.character), str_squish)) |>
-    filter(! candidate %in% c("TOTAL VOTES CAST", "OVERVOTES", "UNDERVOTES", "CONTEST TOTAL")) |>
+    filter(! candidate %in% c("TOTAL VOTES CAST", "OVERVOTES", "UNDERVOTES", "CONTEST TOTAL", "TOTAL VOTESCAST",
+                              "WRITE-IN: NOT ASSIGNED")) |>
     type_convert()
   
   #################################################

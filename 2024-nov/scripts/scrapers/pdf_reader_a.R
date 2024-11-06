@@ -82,7 +82,8 @@ pdf_reader_a <- function(pdfpath, save_output = T){
            municipality = str_remove_all(municipality, coll("-")),
            municipality = str_remove_all(municipality, coll(",")),
            across(where(is.character), str_squish)) |>
-    filter(! candidate %in% c("UNDERVOTES", "TOTAL VOTES CAST", "OVERVOTES", "CONTEST TOTALS"))
+    filter(! candidate %in% c("UNDERVOTES", "TOTAL VOTES CAST", "OVERVOTES", "CONTEST TOTALS")) |>
+    mutate(reporting_unit = str_remove(reporting_unit, "/D[0-9]$"))
   
   #################################################
   # save the output with the timestamped file name
