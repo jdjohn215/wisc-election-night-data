@@ -366,3 +366,40 @@ read_wood <- function(precinct_page_url, save_output = T){
   all.results
 }
 ################################################################################
+
+################################################################################
+read_oneida <- function(precinct_page_url, save_output = T){
+  oneida.raw <- read_html("https://www.oneidacountywi.gov/election-results/")
+  colnames <- c("candidate","Totals", "contest","T. Cassian W 1-2","T. Crescent W 1-3","T. Enterprise W 1","T. Hazelhurst W 1-2","T. Lake Tomahawk W 1-2","T. Little Rice W 1","T. Lynne W 1","T. Minocqua W 1-7","T. Monico W 1","T. Newbold W 1","T. Newbold W 2-4","T. Nokomis W 1-2","T. Pelican W 1- 4","T. Piehl W 1","T. Pine Lake W 1-4","T. Schoepke W 1","T. Stella W 1-2","T. Sugar Camp W 1-2","T. Three Lakes W 1-4","T. Woodboro W 1","T. Woodruff W 1-3","C. Rhinelander W 1-17")
+  
+  df <- oneida.raw |>
+    html_node("tbody") |>
+    html_table() |>
+    set_names(colnames)
+  
+  all.results <- df |>
+    select(-Totals) |>
+    filter(!is.na(contest) & contest != "") |>
+    pivot_longer(cols = -c(candidate, contest), names_to = "reporting_unit", values_to = "votes") |>
+    type_convert() |>
+    mutate(county = "Oneida",
+           across(where(is.character), str_to_upper),
+           ctv = str_sub(reporting_unit, 1, 1),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove_all(municipality, coll("-")),
+           across(where(is.character), str_squish))
+  #################################################
+  # save the output with the timestamped file name
+  if(save_output == T){
+    write_csv(all.results, paste0("2024-nov/raw-processed/",
+                                  "Oneida ", str_replace_all(Sys.time(), 
+                                                           pattern = ":", "-"), ".csv"))
+  }
+  all.results
+}
+
+################################################################################
+
+################################################################################

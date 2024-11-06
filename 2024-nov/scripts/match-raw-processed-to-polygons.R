@@ -41,7 +41,8 @@ county.names <- readRDS("county-names.rds")
 
 processed.files <- map(.x = county.names,
                        .f = ~latest_file(.x, "raw-processed", T)) |> 
-  unlist()
+  unlist() |>
+  unique()
 
 
 all.orig <- map(.x = processed.files,

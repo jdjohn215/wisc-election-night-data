@@ -165,7 +165,7 @@ read_monroe(file.directory$file_type[file.directory$county == "Monroe"])
 read_oconto(latest_file("Oconto", "raw-export", T))
 
 #download_returns("Oneida")
-read_oneida(latest_file("Oneida", "raw", T), sheetno = 7)
+read_oneida(file.directory$file_url[file.directory$county == "Oneida"])
 
 #download_returns("Outagamie") # likely must download manually
 pdf_reader_a(latest_file("Outagamie", "raw", T))

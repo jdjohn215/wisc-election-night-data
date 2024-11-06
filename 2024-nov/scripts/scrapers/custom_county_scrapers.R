@@ -298,59 +298,59 @@ read_pierce <- function(workbookpath, save_output = T){
 ################################################################################
 
 ################################################################################
-read_oneida <- function(workbookpath, sheetno, save_output = T){
-  # this function might need to be edited based on the number of rows in the column header
-  orig <- readxl::read_excel(workbookpath, col_names = F, sheet = sheetno,
-                             col_types = "text", .name_repair = "unique_quiet")
-  
-  # process multi-row header
-  header.start <- 1
-  header.end <-  first(which(str_detect(orig$...1, "Totals"))) -1
-  
-  colnames <- orig[header.start:header.end,] |>
-    mutate(rownum = row_number()) |>
-    pivot_longer(cols = -rownum) |>
-    pivot_wider(names_from = rownum, values_from = value) |>
-    select(-name) |>
-    mutate(`1` = replace(`1`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
-           `2` = replace(`2`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
-           `3` = replace(`3`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
-           `4` = replace(`4`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
-           `1` = zoo::na.locf(`1`, na.rm = F),
-           `2` = zoo::na.locf(`2`, na.rm = F),
-           `3` = zoo::na.locf(`3`, na.rm = F),
-           `4` = zoo::na.locf(`4`, na.rm = F)) |>
-    unite("header", everything(), sep = "_")
-  
-  dtemp <- readxl::read_excel(workbookpath, col_types = "text", sheet = sheetno,
-                              skip = header.end-1, col_names = colnames$header,
-                              .name_repair = "unique_quiet") |>
-    filter(row_number() > 1) |>
-    janitor::remove_empty("cols") |>
-    rename(reporting_unit = 1, total_voters = 2, pct_report = 3, prov_ballots = 4) |>
-    filter(reporting_unit != "Totals") |>
-    select(-c(total_voters, pct_report, prov_ballots)) |>
-    pivot_longer(cols = -c(reporting_unit),
-                 names_to = "contestcandidate", values_to = "votes") |>
-    # remove cells with referendum text, Oneida county includes them on the spreadsheet outside the table
-    filter(str_detect(votes, "Question", negate = T)) |>
-    mutate(contestcandidate = str_replace_all(str_squish(contestcandidate), coll("\r\n"), " "),
-           contestcandidate = str_remove(contestcandidate, "_NA$")) |>
-    separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
-    filter(candidate != "NA") |>
-    type_convert() |>
-    mutate(county = "Oneida",
-           across(where(is.character), str_to_upper),
-           ctv = str_sub(reporting_unit, 1, 1),
-           reporting_unit = str_remove_all(reporting_unit, coll(".")),
-           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^T |^C |^V "),
-           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"))
-  
-  if(save_output == TRUE){
-    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
-  }
-  dtemp
-}
+# read_oneida <- function(workbookpath, sheetno, save_output = T){
+#   # this function might need to be edited based on the number of rows in the column header
+#   orig <- readxl::read_excel(workbookpath, col_names = F, sheet = sheetno,
+#                              col_types = "text", .name_repair = "unique_quiet")
+#   
+#   # process multi-row header
+#   header.start <- 1
+#   header.end <-  first(which(str_detect(orig$...1, "Totals"))) -1
+#   
+#   colnames <- orig[header.start:header.end,] |>
+#     mutate(rownum = row_number()) |>
+#     pivot_longer(cols = -rownum) |>
+#     pivot_wider(names_from = rownum, values_from = value) |>
+#     select(-name) |>
+#     mutate(`1` = replace(`1`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
+#            `2` = replace(`2`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
+#            `3` = replace(`3`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
+#            `4` = replace(`4`, is.na(`1`) & is.na(`2`) & is.na(`3`) & is.na(`4`) & is.na(`5`), "NA"),
+#            `1` = zoo::na.locf(`1`, na.rm = F),
+#            `2` = zoo::na.locf(`2`, na.rm = F),
+#            `3` = zoo::na.locf(`3`, na.rm = F),
+#            `4` = zoo::na.locf(`4`, na.rm = F)) |>
+#     unite("header", everything(), sep = "_")
+#   
+#   dtemp <- readxl::read_excel(workbookpath, col_types = "text", sheet = sheetno,
+#                               skip = header.end-1, col_names = colnames$header,
+#                               .name_repair = "unique_quiet") |>
+#     filter(row_number() > 1) |>
+#     janitor::remove_empty("cols") |>
+#     rename(reporting_unit = 1, total_voters = 2, pct_report = 3, prov_ballots = 4) |>
+#     filter(reporting_unit != "Totals") |>
+#     select(-c(total_voters, pct_report, prov_ballots)) |>
+#     pivot_longer(cols = -c(reporting_unit),
+#                  names_to = "contestcandidate", values_to = "votes") |>
+#     # remove cells with referendum text, Oneida county includes them on the spreadsheet outside the table
+#     filter(str_detect(votes, "Question", negate = T)) |>
+#     mutate(contestcandidate = str_replace_all(str_squish(contestcandidate), coll("\r\n"), " "),
+#            contestcandidate = str_remove(contestcandidate, "_NA$")) |>
+#     separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
+#     filter(candidate != "NA") |>
+#     type_convert() |>
+#     mutate(county = "Oneida",
+#            across(where(is.character), str_to_upper),
+#            ctv = str_sub(reporting_unit, 1, 1),
+#            reporting_unit = str_remove_all(reporting_unit, coll(".")),
+#            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^T |^C |^V "),
+#            municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"))
+#   
+#   if(save_output == TRUE){
+#     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+#   }
+#   dtemp
+# }
 ################################################################################
 
 ################################################################################
@@ -977,13 +977,14 @@ read_iowa <- function(workbookpath, save_output = T){
       pivot_wider(names_from = rownum, values_from = value) |>
       mutate(`1` = zoo::na.locf(`1`, na.rm = F),
              `2` = zoo::na.locf(`2`, na.rm = F)) |>
-      unite("colname", `1`, `2`, `3`, na.rm = T) |>
+      unite("colname", any_of(c("1","2","3")), na.rm = T) |>
       pull(2)
     
     sheet |>
       filter(row_number() >= startrow) |>
       set_names(colnames) |>
       rename(reporting_unit = 1) |>
+      filter(reporting_unit != "TOTAL") |>
       select(-contains("PROVISIONALS")) |>
       pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
       separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate"))
