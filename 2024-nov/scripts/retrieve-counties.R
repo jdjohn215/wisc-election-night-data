@@ -204,7 +204,7 @@ read_sawyer(latest_file("Sawyer", "raw-export", T))
 read_shawano(latest_file("Shawano", "raw-export", T), sheetvector = 1:5)
 
 #download_returns("Sheboygan") # likely must download manually
-pdf_reader_d(latest_file("Sheboygan", "raw-export", T), 5, 89)
+pdf_reader_d(latest_file("Sheboygan", "raw-export", T), 1, 23)
 
 #download_returns("St. Croix")
 pdf_reader_a(latest_file("St. Croix", "raw", T))

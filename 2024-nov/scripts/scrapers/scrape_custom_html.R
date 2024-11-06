@@ -44,7 +44,8 @@ scrape_milwaukee <- function(electionurl, save_output = T){
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "VILLAGE OF |TOWN OF |CITY OF |^T |^C |^V "),
-           municipality = word(municipality, 1, 1, sep = "\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"))
+           municipality = word(municipality, 1, 1, sep = "\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]")) |>
+    filter(str_detect(reporting_unit, "316", negate = T))
   
   #################################################
   # save the output with the timestamped file name
