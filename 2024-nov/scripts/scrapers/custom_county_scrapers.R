@@ -845,45 +845,61 @@ read_pepin <- function(workbookpath, save_output = T){
 
 ################################################################################
 read_eauclaire <- function(workbookpath, save_output = T){
+  sheetvector <- excel_sheets(workbookpath)
   
-  sheet1 <- read_excel(workbookpath, sheet = 1, col_names = F, .name_repair = "unique_quiet")
-  sheet2 <- read_excel(workbookpath, sheet = 2, col_names = F, .name_repair = "unique_quiet",
-                       col_types = "text")
-  start.row <- min(which(str_detect(sheet1$...1, "^Town")))
+  read_sheet <- function(sheetindex){
+    sheet.orig <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
+                             .name_repair = "unique_quiet")
+    start.row <- min(which(str_detect(sheet.orig$...1, "^Tn|^City")))
+    
+    colnames <- sheet.orig |>
+      filter(row_number() < start.row,
+             str_detect(...2, "VOTE FOR|Reporting", negate = T)) |>
+      mutate(rownum = row_number()) |>
+      pivot_longer(cols = -rownum, names_to = "column") |>
+      mutate(value = str_replace_all(value, coll("\n"), " ")) |>
+      pivot_wider(names_from = rownum, values_from = value) |>
+      mutate(`1` = zoo::na.locf(`1`, na.rm = F),
+             colname = paste(`1`, `2`, sep = "_"),
+             colname = str_replace_all(colname, "\n", " "))
+    
+    sheet.orig |>
+      filter(row_number() >= start.row) |>
+      set_names(colnames$colname) |>
+      janitor::remove_empty("cols") |>
+      rename(reporting_unit = 1) |>
+      pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
+      separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
+      filter(! candidate %in% c("Total Votes Cast", "Undervotes", "Overvotes", "Contest Total"))
+  }
   
-  colnames <- sheet1 |>
-    filter(row_number() %in% c(start.row-2, start.row-1)) |>
-    mutate(rownum = row_number()) |>
-    pivot_longer(cols = -rownum, names_to = "column") |>
-    mutate(value = str_replace_all(value, coll("\n"), " ")) |>
-    pivot_wider(names_from = rownum, values_from = value) |>
-    mutate(`1` = zoo::na.locf(`1`, na.rm = F),
-           colname = paste(`1`, `2`, sep = "_"),
-           colname = str_replace_all(colname, "\n", " "))
-  both.sheets <- sheet1 |>
-    filter(row_number() >= start.row) |>
-    rbind(sheet2) |>
-    set_names(colnames$colname) |>
-    rename(reporting_unit = 1) |>
-    select(-ends_with("NA")) |>
-    rename(reporting_unit = 1) |>
-    pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
-    mutate(votes = na_if(votes, "-")) |>
-    filter(!is.na(votes)) |>
-    separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
+  all.output <- map(.x = sheetvector,
+                    .f = read_sheet,
+                    .progress = TRUE) |>
+    list_rbind() |>
     type_convert() |>
-    filter(reporting_unit != "Total") |>
+    filter(! reporting_unit %in% c("Total", "Totals")) |>
     mutate(county = "Eau Claire",
            reporting_unit = str_remove_all(reporting_unit, coll("\n")),
            across(where(is.character), str_to_upper),
+           reporting_unit = case_when(
+             reporting_unit == "WASH1,6-7,9-10,12,14-15,17-18" ~ "TOWN OF WASHINGTON WARDS 1,6-7,9-10,12,14-15,17-18",
+             reporting_unit == "WASH2-5,8,11,13,16,19-21" ~ "TOWN OF WASHINGTON WARDS 2-5,8,11,13,16,19-21",
+             TRUE ~ reporting_unit
+           ),
+           reporting_unit = str_replace(reporting_unit, "^TN\\b", "TOWN OF"),
+           reporting_unit = str_replace(reporting_unit, "^VIL\\b", "VILLAGE OF"),
+           reporting_unit = str_replace(reporting_unit, "^CITY\\b", "CITY OF"),
+           reporting_unit = str_replace(reporting_unit, "OF OF", "OF"),
            ctv = str_sub(reporting_unit, 1, 1),
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF "),
            municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_replace(municipality, "PLEAS VALLEY", "PLEASANT VALLEY"),
            across(where(is.character), str_squish))
   
   if(save_output == TRUE){
-    write_csv(both.sheets, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+    write_csv(all.output, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
   }
 }
 ################################################################################
