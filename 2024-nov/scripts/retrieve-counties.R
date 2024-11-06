@@ -171,7 +171,7 @@ read_oneida(file.directory$file_url[file.directory$county == "Oneida"])
 pdf_reader_a(latest_file("Outagamie", "raw", T))
 
 #download_returns("Ozaukee")
-pdf_reader_b(latest_file("Ozaukee", "raw-export", T), 1, 60)
+pdf_reader_b(latest_file("Ozaukee", "raw-export", T), c(1:60))
 
 #download_returns("Pepin")
 read_pepin(latest_file("Pepin", "raw-export", T))
@@ -219,7 +219,8 @@ read_trempealeau(latest_file("Trempealeau", "raw-export", T))
 #download_returns("Vernon") # download sharepoint file manually
 read_vernon(latest_file("Vernon", "raw", T))
 
-# Vilas - not yet processed
+#download_returns("Vilas")
+read_vilas(latest_file("Vilas", "raw-export", T))
 
 #download_returns("Walworth")
 pdf_reader_b(latest_file("Walworth", "raw-export", T), 1, 145)
@@ -241,7 +242,7 @@ pdf_reader_d(latest_file("Waupaca", "raw-export", T), 1, 99)
 read_waushara(latest_file("Waushara", "raw-export", T), 1:4)
 
 #download_returns("Winnebago")
-pdf_reader_b2(latest_file("Winnebago", "raw-export", T), 1, 112)
+pdf_reader_b2(latest_file("Winnebago", "raw-export", T), sheetvector = c(1:112))
 
 read_wood(file.directory$file_url[file.directory$county == "Wood"])
 
