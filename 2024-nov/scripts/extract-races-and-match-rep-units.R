@@ -55,6 +55,11 @@ combined.results <- uss.votes |>
 nrow(combined.results) == nrow(matched.polygons)
 
 ################################################################################
+central.count.status <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1EXVe3MMWVgyl97mKdl93uizHIaqQXqHOOufH3-IAzOs/edit?gid=0#gid=0") |>
+  mutate(across(where(is.character), str_to_upper)) |>
+  filter(`Central Count Reporting?` == "NO")
+2
+
 # create table for each rep unit
 rep_unit_html_table <- function(rowindex, df){
   df[rowindex,] |>
@@ -71,7 +76,9 @@ rep_unit_html_table <- function(rowindex, df){
            REP = round(REP),
            marginv = round(DEM-REP),
            marginp = round((DEM/TOT - REP/TOT)*100, 1)) |>
-    knitr::kable(format = "html")
+    knitr::kable(format = "html",
+                 caption = ifelse(df$MCD_FIPS[rowindex] %in% central.count.status$MCD_FIPS,
+                                  "Absentee ballots probably not included", ""))
 }
 
 all.tables <- map(.x = 1:nrow(combined.results),
