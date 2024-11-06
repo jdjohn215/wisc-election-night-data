@@ -79,7 +79,8 @@ pdf_reader_b <- function(workbookpath, firstsheet, lastsheet, save_output = T){
            municipality != "TOTAL",
            municipality != "DOOR COUNTY - TOTAL",
            municipality != "COUNTY - TOTAL",
-           municipality != "ELECTION DAY")
+           municipality != "ELECTION DAY",
+           ! candidate %in% c("TOTAL VOTES", "TIMES CAST", "REGISTERED VOTERS"))
   
   #################################################
   # save the output with the timestamped file name
