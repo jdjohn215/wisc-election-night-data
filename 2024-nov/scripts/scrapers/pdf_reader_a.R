@@ -14,8 +14,13 @@ pdf_reader_a <- function(pdfpath, save_output = T){
     page <- pagelist[pageindex] |> read_delim(col_names = F, delim = "!!",
                                               col_types = cols(.default = "c"))
     
-    reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
-                                               "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 1]
+    if(str_detect(pdfpath, "Portage")){
+      reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
+                                                 "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 2]
+    } else {
+      reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
+                                                 "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 1]
+    }
     race.start <- min(which(str_detect(page$X1, "Vote For")))-1
     
     page |>
