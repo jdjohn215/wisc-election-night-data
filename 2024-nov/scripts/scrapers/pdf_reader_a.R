@@ -77,7 +77,7 @@ pdf_reader_a <- function(pdfpath, save_output = T){
     mutate(across(where(is.character), str_to_upper),
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
            ctv = str_sub(reporting_unit, 1, 1),
-           municipality = str_remove(reporting_unit, "TOWN OF |VILLAGE OF |CITY OF |^V OF |^C OF |^V OF "),
+           municipality = str_remove(reporting_unit, "TOWN OF |VILLAGE OF |CITY OF |^V OF |^C OF |^V OF |^C\\b|^T\\b|^V\\b"),
            municipality = word(municipality, 1, 1, sep = "\\bWARD|\\bWD|\\bWARD|\\bD[0-9]|\\bW[0-9]|\\bW\\b|\\bW[0-9]"),
            municipality = str_remove_all(municipality, coll("-")),
            municipality = str_remove_all(municipality, coll(",")),

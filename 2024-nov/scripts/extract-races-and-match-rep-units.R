@@ -12,7 +12,7 @@ uss.contest.names <- all.raw |>
   group_by(reporting_unit, contest) |>
   summarise()
 pre.contest.names <- all.raw |>
-  filter(str_detect(candidate, "TRUMP")) |>
+  filter(str_detect(candidate, "TRUMP|\\bVANCE\\b")) |>
   group_by(reporting_unit, contest) |>
   summarise()
 
@@ -33,8 +33,8 @@ uss.votes <- all.raw |>
 pre.votes <- all.raw |>
   inner_join(pre.contest.names) |>
   mutate(candidate2 = case_when(
-    str_detect(candidate, "HARRIS") ~ "PREDEM24",
-    str_detect(candidate, "TRUMP") ~ "PREREP24",
+    str_detect(candidate, "HARRIS|\\bWALZ\\b") ~ "PREDEM24",
+    str_detect(candidate, "TRUMP|\\bVANCE\\b") ~ "PREREP24",
     TRUE ~ "other"
   )) |>
   group_by(county, ctv, municipality, reporting_unit, contest) |>

@@ -59,6 +59,7 @@ all.orig <- map(.x = processed.files,
            municipality == "WISC RAPIDS" ~ "WISCONSIN RAPIDS",
            municipality == "SO MILW" ~ "SOUTH MILWAUKEE",
            municipality == "MT PLEASANT" ~ "MOUNT PLEASANT",
+           municipality == "BDAM" ~ "BEAVER DAM",
            TRUE ~ municipality
          )) |>
   mutate(
@@ -76,7 +77,9 @@ all.orig <- map(.x = processed.files,
       reporting_unit == "CITY OF HARTFORD, DISTRICT 2 WARD 11 - DODGE" ~ "DODGE",
       TRUE ~ county
     )) |>
-  filter(municipality != "CALEDONIA (VOID W6-7)") # seems like a row that should be dropped
+  # seems like a row that should be dropped
+  filter(municipality != "CALEDONIA (VOID W6-7)",
+         reporting_unit != "CITY OF HARTFORD, DISTRICT 2 WARD 11 - DODGE")
 write_csv(all.orig, "2024-nov/processed/all-raw-processed.csv")
 ################################################################################
 
@@ -149,6 +152,7 @@ rep.units.shp.wards <- rep.units.shp |>
            wards == "8-7" ~ "7-8",
            rep_unit == "VILLAGE OF HOLMEN WARDS 1-5,12-13" ~ "1-5",
            rep_unit == "CITY OF WATERTOWN WARDS 3-4" ~ "3,4,23",
+           rep_unit == "CITY OF BEAVER DAM WARDS 17-18,21-22,24" ~ "17,18,21,22,24,28",
            TRUE ~ wards
          )) |>
   rowwise() |>

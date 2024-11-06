@@ -29,11 +29,11 @@ pdf_reader_a(latest_file("Adams", "raw", T))
 #download_returns("Ashland")
 read_ashland(latest_file("Ashland", "raw-export", T))
 
-#download_returns("Barron")
+#download_returns("Barron") # manually copy/pasted file
 read_barron(latest_file("Barron", "raw", T))
 
 #download_returns("Bayfield")
-read_bayfield(latest_file("Bayfield", "raw-export", T), c(2:7))
+read_bayfield(latest_file("Bayfield", "raw-export", T), c(1:3))
 
 #download_returns("Brown")
 pdf_reader_c(latest_file("Brown", "raw-export", T))
@@ -45,30 +45,11 @@ read_buffalo(latest_file("Buffalo", "raw-export", T))
 read_burnett(latest_file("Burnett", "raw-export", T))
 
 #download_returns("Calumet")
-pdf_reader_d(latest_file("Calumet", "raw-export", T), 1, 75)
+pdf_reader_a(latest_file("Calumet", "raw", T))
 
 # download_returns("Chippewa") # might have to manually download and timestamp this one
-#   this won't work with zeroes
-chippewa <- bind_rows(
-  read_chippewa_contest(latest_file("Chippewa", "raw", fullpath = T), pagenumbers = 9:10,
-                        column_names = c("US Senate - Reported",
-                                         "US Senate - Baldwin",
-                                         "US Senate - Hovde",
-                                         "US Senate - Anderson",
-                                         "US Senate - Leager",
-                                         "US Senate - write-in")),
-  read_chippewa_contest(latest_file("Chippewa", "raw", fullpath = T), page = 12:13,
-                        column_names = c("Rep in Congress D7 - Dem_Reported",
-                                         "Rep in Congress D7 - Dem_Kilbourn",
-                                         "Rep in Congress D7 - Dem_Duranceau",
-                                         "Rep in Congress D7 - Dem_write-in")),
-  read_chippewa_contest(latest_file("Chippewa", "raw", fullpath = T), page = 62:63,
-                        column_names = c("State Referendum Question 1_Yes",
-                                         "State Referendum Question 1_No",
-                                         "State Referendum Question 2_Yes",
-                                         "State Referendum Question 2_No"))
-)
-write_csv(chippewa, paste0("2024-nov/raw-processed/", latest_file("Chippewa", "raw"), ".csv"))
+#   manually edited
+read_chippewa(latest_file("Chippewa", "raw-export", T))
 
 # has to be manually downloaded
 #download_returns("Clark")
@@ -192,7 +173,8 @@ read_polk(latest_file("Polk", "raw", T))
 #download_returns("Portage")
 pdf_reader_a(latest_file("Portage", "raw", T))
 
-# Price - reporting unit data probably not available
+#download_returns("Price")
+read_price(latest_file("Price", "raw-export", T), 1)
 
 #download_returns("Racine") # likely must download manually
 pdf_reader_b(latest_file("Racine", "raw-export", T), sheetvector = c(1:100))
