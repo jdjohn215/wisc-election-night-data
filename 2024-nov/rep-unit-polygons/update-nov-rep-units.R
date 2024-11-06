@@ -74,6 +74,52 @@ mke.cnty.replacements <- wards.august |>
   st_make_valid() |>
   st_transform(crs = st_crs(rep.unit.polygons))
 ################################################################################
+# several Richland county reporting units from August need to be combined
+#   "CITY OF RICHLAND CENTER" becomes single reporting unit
+richland.replacements <- wards.august |>
+  mutate(MCD_FIPS = str_sub(WARD_FIPS, 1, 10)) |>
+  filter((MCD_FIPS == "5510367625")) |>
+  mutate(rep_unit = "CITY OF RICHLAND WARDS 1-14") |>
+  group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  summarise(.groups = "drop") |>
+  st_make_valid() |>
+  st_transform(crs = st_crs(rep.unit.polygons))
+################################################################################
+# several Hudson county reporting units from August need to be split
+#   "TOWN OF HUDSON WARDS 1-14" becomes 
+#     - TOWN OF HUDSON WARDS 1-2
+#     - TOWN OF HUDSON WARDS 3-6
+#     - TOWN OF HUDSON WARDS 7-14
+hudson.replacements <- wards.august |>
+  mutate(MCD_FIPS = str_sub(WARD_FIPS, 1, 10)) |>
+  filter((MCD_FIPS == "5510936275")) |>
+  mutate(rep_unit = case_when(
+    ward_label %in% c("HUDSON - T 0001", "HUDSON - T 0001") ~ "TOWN OF HUDSON WARDS 1-2",
+    ward_label %in% c("HUDSON - T 0003", "HUDSON - T 0004",
+                      "HUDSON - T 0005", "HUDSON - T 0006") ~ "TOWN OF HUDSON WARDS 3-6",
+    TRUE ~ "TOWN OF HUDSON WARDS 7-14")) |>
+  group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  summarise(.groups = "drop") |>
+  st_make_valid() |>
+  st_transform(crs = st_crs(rep.unit.polygons))
+################################################################################
+# several Walworth county reporting units from August need to be split
+#   "CITY OF WHITEWATER WARDS 1-10" becomes 
+#     - CITY OF WHITEWATER WARDS 1-7
+#     - CITY OF WHITEWATER WARDS 8-10
+walworth.replacements <- wards.august |>
+  mutate(MCD_FIPS = str_sub(WARD_FIPS, 1, 10)) |>
+  filter((MCD_FIPS == "5512786925")) |>
+  mutate(rep_unit = case_when(
+    ward_label %in% c("Whitewater - C 0001", "Whitewater - C 0002", "Whitewater - C 0003",
+                      "Whitewater - C 0004", "Whitewater - C 0005", "Whitewater - C 0006",
+                      "Whitewater - C 0007") ~ "CITY OF WHITEWATER WARDS 1-7",
+    ward_label %in% c("Whitewater - C 0008", "Whitewater - C 0009", "Whitewater - C 0010") ~ "CITY OF WHITEWATER WARDS 8-10")) |>
+  group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  summarise(.groups = "drop") |>
+  st_make_valid() |>
+  st_transform(crs = st_crs(rep.unit.polygons))
+################################################################################
 # several Door county reporting units from August need to be split
 #   "CITY OF STURGEON BAY WARDS 1-9" becomes:
 #     - CITY OF STURGEON BAY WARDS 1-7,9
@@ -173,6 +219,18 @@ updated.rep.units <- rep.unit.polygons |>
   filter(MCD_FIPS != "5513960500") |>
   rmapshaper::ms_erase(erase = winnebago.replacements, remove_slivers = T) |>
   bind_rows(winnebago.replacements) |>
+  # replace the Richland county wards
+  filter(MCD_FIPS != "5510367625") |>
+  rmapshaper::ms_erase(erase = richland.replacements, remove_slivers = T) |>
+  bind_rows(richland.replacements) |>
+  # replace the Hudson wards
+  filter(MCD_FIPS != "5510936275") |>
+  rmapshaper::ms_erase(erase = hudson.replacements, remove_slivers = T) |>
+  bind_rows(hudson.replacements) |>
+  # replace the Walworth wards
+  filter(MCD_FIPS != "5512786925") |>
+  rmapshaper::ms_erase(erase = walworth.replacements, remove_slivers = T) |>
+  bind_rows(walworth.replacements) |>
   # replace the Kenosha county wards
   filter(MCD_FIPS != "5505939225") |>
   rmapshaper::ms_erase(erase = kenosha.replacements, remove_slivers = T) |>

@@ -643,7 +643,7 @@ read_richland <- function(workbookpath, sheetvector = 1:2, save_output = T){
              str_detect(reporting_unit, "BOAZ|CAZENOVIA|LONE ROCK|VIOLA|YUBA") ~ "V",
              TRUE ~ "T"
            ),
-           municipality = str_remove(reporting_unit, "CITY OF | (W1)| (W2)"),
+           municipality = str_remove(reporting_unit, "CITY OF | [(]W1[)]| [(]W2[)]"),
            municipality = word(municipality, 1, sep = "-"),
            across(where(is.character), str_squish))
   
@@ -1229,7 +1229,8 @@ read_trempealeau <- function(workbookpath, sheetvector = 1:3, save_output = T){
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^TOWN|^VILLAGE|^CITY"),
            municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
-           across(where(is.character), str_squish))
+           across(where(is.character), str_squish)) |>
+    filter(municipality != "TOTAL")
   
   if(save_output == TRUE){
     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
