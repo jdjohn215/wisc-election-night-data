@@ -165,7 +165,8 @@ read_menominee(latest_file("Menominee", "raw-export", T))
 
 #scrape_milwaukee(file.directory$file_url[file.directory$county == "Milwaukee"])
 
-read_monroe(file.directory$file_type[file.directory$county == "Monroe"])
+#download_returns("Monroe")
+read_monroe(latest_file("Monroe", "raw-export", T))
 
 #download_returns("Oconto")
 read_oconto(latest_file("Oconto", "raw-export", T))
@@ -201,6 +202,9 @@ read_richland(latest_file("Richland", "raw-export", T))
 
 #scrape_rock(file.directory$file_url[file.directory$county == "Rock"])
 
+#download_returns("Rusk")
+read_rusk(latest_file("Rusk", "raw-export", T))
+
 read_sauk(file.directory$file_type[file.directory$county == "Sauk"])
 
 #download_returns("Sawyer")
@@ -210,7 +214,7 @@ read_sawyer(latest_file("Sawyer", "raw-export", T))
 read_shawano(latest_file("Shawano", "raw-export", T), sheetvector = 1:5)
 
 #download_returns("Sheboygan") # likely must download manually
-pdf_reader_d(latest_file("Sheboygan", "raw-export", T), 1, 23)
+#pdf_reader_d(latest_file("Sheboygan", "raw-export", T), 5, 25) # needs some work
 
 #download_returns("St. Croix")
 pdf_reader_a(latest_file("St. Croix", "raw", T))
@@ -220,7 +224,7 @@ read_taylor(latest_file("Taylor", "raw-export", T))
 
 # Trempeleau - not yet processed
 #download_returns("Trempealeau")
-read_trempealeau(latest_file("Trempealeau", "raw-export", T))
+read_trempealeau(latest_file("Trempealeau", "raw-export", T), sheetvector = 1:3)
 
 #download_returns("Vernon") # download sharepoint file manually
 read_vernon(latest_file("Vernon", "raw", T))
@@ -229,7 +233,7 @@ read_vernon(latest_file("Vernon", "raw", T))
 read_vilas(latest_file("Vilas", "raw-export", T))
 
 #download_returns("Walworth")
-pdf_reader_b(latest_file("Walworth", "raw-export", T), 1, 145)
+pdf_reader_b(latest_file("Walworth", "raw-export", T), c(1:4,6:7,9:67))
 
 #download_returns("Washburn")
 read_washburn(latest_file("Washburn", "raw-export", T))
@@ -240,7 +244,6 @@ pdf_reader_b2(latest_file("Washington", "raw-export", T), sheetvector = c(2:37,4
 # Waukesha - use list of URLs, one URL to each contest
 scrape_waukesha(file.directory$file_url[file.directory$county == "Waukesha"])
 
-# waupaca file has been taken down, so I copy over previously downloaded version
 #download_returns("Waupaca")
 pdf_reader_d(latest_file("Waupaca", "raw-export", T), 1, 99)
 

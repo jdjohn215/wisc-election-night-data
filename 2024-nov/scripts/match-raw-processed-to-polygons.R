@@ -122,6 +122,7 @@ rep.units.wards <- orig.rep.units |>
     reporting_unit == "C BEAVER DAM" ~ "8,11,19-20,23,27",
     reporting_unit == "V GREENDALE WARDS 1,2,3,49,10" ~ "1,2,3,4,9,10",
     reporting_unit == "CITY OF HARTFORD, DISTRICT 2 WARD 11 - DODGE" ~ "11",
+    reporting_unit == "TOWN OF LINN, WARDS, 3,6" ~ "3,6",
     TRUE ~ wards
   )) |>
   ungroup() |>
