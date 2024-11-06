@@ -227,7 +227,8 @@ pdf_reader_b2(latest_file("Washington", "raw-export", T), sheetvector = c(2:37,4
 scrape_waukesha(file.directory$file_url[file.directory$county == "Waukesha"])
 
 #download_returns("Waupaca")
-pdf_reader_d(latest_file("Waupaca", "raw-export", T), 1, 99)
+# manually edited XLSX format
+read_waupaca(latest_file("Waupaca", "raw-export", T))
 
 #download_returns("Waushara")
 read_waushara(latest_file("Waushara", "raw-export", T), 1:4)

@@ -2297,3 +2297,45 @@ read_price<- function(workbookpath, sheetvector = 1, save_output = T){
   }
   dtemp
 }
+################################################################################
+
+################################################################################
+read_waupaca <- function(workbookpath, save_output = T){
+  sheetvector <- excel_sheets(workbookpath)
+  
+  read_sheet <- function(sheetindex){
+    sheet.orig <- read_excel(workbookpath, sheet = sheetindex, col_names = T,
+                             .name_repair = "unique_quiet", col_types = "text")
+    
+    sheet.orig |>
+      rename(municipality = 1, reporting_unit = 2) |>
+      pivot_longer(cols = -c(municipality, reporting_unit, contest), 
+                   names_to = "candidate", values_to = "votes") |>
+      mutate(candidate = str_replace_all(candidate, coll("\n"), " "))
+  }
+  
+  
+  dtemp <- map(.x = sheetvector,
+               .f = read_sheet,
+               .progress = T) |>
+    list_rbind() |>
+    mutate(candidate = str_replace_all(candidate, coll("\r\n"), " "),
+           reporting_unit = str_replace_all(reporting_unit, coll("\n"), " ")) |>
+    mutate(county = "Waupaca",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           reporting_unit = paste(municipality, reporting_unit),
+           ctv = str_sub(municipality, 1, 1),
+           municipality = str_remove(municipality, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^CITY |^VILLAGE |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll("-")),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish)) |>
+    filter(municipality != "TOTAL")
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
