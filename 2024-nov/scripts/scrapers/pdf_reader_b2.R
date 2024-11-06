@@ -1,4 +1,4 @@
-pdf_reader_b2 <- function(workbookpath, firstsheet, lastsheet, save_output = T){
+pdf_reader_b2 <- function(workbookpath, sheetvector, save_output = T){
   # the list of sheets in the workbook
   sheet.names <- excel_sheets(workbookpath)
   
@@ -50,7 +50,7 @@ pdf_reader_b2 <- function(workbookpath, firstsheet, lastsheet, save_output = T){
   }
   
   # process all the sheets individually
-  all.sheets <- map(.x = firstsheet:lastsheet,
+  all.sheets <- map(.x = sheetvector,
                     .f = ~read_election_sheet(.x, 
                                               workbookpath = workbookpath), 
                     .progress = T)

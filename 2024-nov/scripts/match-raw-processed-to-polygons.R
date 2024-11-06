@@ -69,6 +69,7 @@ all.orig <- map(.x = processed.files,
       reporting_unit == "T-ARCADIA W1-3" ~ "T-ARCADIA W1-4",
       reporting_unit == "VILLAGE OF HOLMEN WARDS 1-" ~ "VILLAGE OF HOLMEN WARDS 1-5",
       TRUE ~ reporting_unit),
+    reporting_unit = str_remove(reporting_unit, " HJ1$| HUHS$"),
     county = case_when(
       reporting_unit == "CITY OF MILWAUKEE WARD 316" ~ "WASHINGTON",
       reporting_unit == "CITY OF MILWAUKEE WARD 317" ~ "WAUKESHA",

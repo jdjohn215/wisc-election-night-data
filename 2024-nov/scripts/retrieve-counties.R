@@ -228,7 +228,7 @@ pdf_reader_b(latest_file("Walworth", "raw-export", T), 1, 145)
 read_washburn(latest_file("Washburn", "raw-export", T))
 
 #download_returns("Washington")
-pdf_reader_b2(latest_file("Washington", "raw-export", T), 2, 222)
+pdf_reader_b2(latest_file("Washington", "raw-export", T), sheetvector = c(2:37,40:93))
 
 # Waukesha - use list of URLs, one URL to each contest
 scrape_waukesha(file.directory$file_url[file.directory$county == "Waukesha"])
