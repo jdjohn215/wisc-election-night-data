@@ -15,7 +15,9 @@ rep.unit.tables <- readRDS(here::here("2024-nov/qmd-status/rep-unit-html-tables.
 df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geojson")) |>
   mutate(table = as.character(rep.unit.tables),
          label = paste(county, "COUNTY -", reporting_unit, "<br>",
-                       table))
+                       table)) |>
+  filter(PRETOT24 > 0,
+         !is.na(PRETOT24))
 
 df.state <- df |>
   st_drop_geometry() |>
