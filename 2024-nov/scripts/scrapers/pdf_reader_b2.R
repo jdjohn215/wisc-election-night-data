@@ -18,6 +18,7 @@ pdf_reader_b2 <- function(workbookpath, sheetvector, save_output = T){
                              "Cumulative - Total",
                              "Electionwide - Total",
                              "Countywide",
+                             "Countywide - Total",
                              "All Ballots",
                              "All Ballots - Total")) |>
       mutate(contest = str_squish(contest.name)) |> 

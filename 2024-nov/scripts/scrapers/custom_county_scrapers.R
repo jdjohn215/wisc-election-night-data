@@ -467,7 +467,7 @@ read_oconto <- function(workbookpath, save_output = T){
   
   sheet1 <- sheet1.orig |>
     filter(row_number() >= startrow) |>
-    set_names(headers) |>
+    set_names(headers2) |>
     select(-starts_with("drop")) |>
     mutate(contest = if_else(row_number() == 1 | lag(candidate, 1) == "Undervotes",
                              true = candidate, false = NA),
@@ -997,7 +997,7 @@ read_iowa <- function(workbookpath, save_output = T){
       unite("colname", any_of(c("1","2","3")), na.rm = T) |>
       pull(2)
     
-    sheet |>
+    sheet2 <- sheet |>
       filter(row_number() >= startrow) |>
       set_names(colnames) |>
       rename(reporting_unit = 1) |>
@@ -1005,6 +1005,7 @@ read_iowa <- function(workbookpath, save_output = T){
       select(-contains("PROVISIONALS")) |>
       pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
       separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate"))
+    sheet2
   }
   
   dtemp <- map(.x = sheetvector,
