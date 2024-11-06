@@ -108,7 +108,7 @@ pdf_reader_b2(latest_file("Fond du Lac", "raw-export", T), 1, 158)
 pdf_reader_d(latest_file("Grant", "raw-export", T), 1, 80)
 
 #download_returns("Green")
-pdf_reader_d(latest_file("Green", "raw-export", T), 1, 22)
+pdf_reader_d(latest_file("Green", "raw-export", T), 1, 5)
 
 # Green Lake - not yet processed
 #download_returns("Green Lake")
