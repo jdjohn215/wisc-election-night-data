@@ -430,7 +430,10 @@ read_waushara <- function(workbookpath, sheetvector, save_output = T){
            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^T |^V |^C "),
            municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
            municipality = str_remove_all(municipality, coll("-")),
-           municipality = str_replace(municipality, "MT MORRIS", "MOUNT MORRIS"))
+           municipality = str_replace(municipality, "MT MORRIS", "MOUNT MORRIS")) |>
+    filter(str_detect(candidate, coll("#"), negate = T),
+           ! contest %in% c("PERCENTAGE VOTER TURNOUT"),
+           ! candidate %in% c("PERCENTAGE VOTER TURNOUT"))
   
   if(save_output == TRUE){
     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
@@ -1025,11 +1028,12 @@ read_buffalo <- function(workbookpath, save_output = T){
              str_detect(candidate, "Undervotes|Registered Write-in|Provisional", negate = T),
              ! candidate %in% c("FEDERAL","STATE REFERENDUM","COUNTY","LEGISLATIVE AND STATE",
                                 "CONGRESSIONAL")) |>
-      mutate(candidate = str_squish(candidate)) |>
       mutate(contest = if_else(str_detect(candidate, "^County Clerk|^County Treasurer|^Register of Deeds|^Eligible Voting Age|^State Senator Dist. 10|^Representative to the Assembly Dist. 29|^District Attorney|^United States Senator|^Representative in Congress|^President/Vice President"),
                                true = candidate, false = NA),
-             contest = zoo::na.locf(contest)) |>
+             contest = zoo::na.locf(contest, na.rm = F)) |>
       select(contest, everything()) |>
+      filter(contest != candidate) |>
+      mutate(candidate = paste(PARTY, candidate)) |>
       select(-c(PARTY, TOTALS, `PRECINCTS REPORTING`)) |>
       pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
       mutate(across(where(is.character), str_squish))
@@ -1393,10 +1397,10 @@ read_kewaunee <- function(workbookpath, save_output = T){
   
   dtemp <- sheet1 |>
     filter(row_number() > startrow) |>
+    bind_rows(sheet2) |>
     set_names(unlist(sheet1[startrow,])) |>
     rename(contest = 1, candidate = 2) |>
     janitor::remove_empty("rows") |>
-    bind_rows(sheet2) |>
     pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
     filter(reporting_unit != "TOTALS") |>
     type_convert() |>
@@ -1565,16 +1569,42 @@ read_kenosha <- function(csvurl, save_output = T){
 
 ################################################################################
 read_marinette <- function(workbookpath, sheetvector = 2:4, save_output = T){
+  firstsheet <- read_excel(workbookpath, sheet = sheetvector[1], col_names = F,
+                           .name_repair = "unique_quiet") |>
+    janitor::remove_empty(which = "cols")
+  colnames <- firstsheet |>
+    select(-1) |>
+    filter(row_number() < 9) |>
+    mutate(rownum = row_number()) |>
+    pivot_longer(cols = -rownum) |>
+    pivot_wider(names_from = rownum, values_from = value) |>
+    mutate(across(.cols = any_of(c("1","2","3")),
+                  .f = ~zoo::na.locf(.x, na.rm = F))) |>
+    select(-name) |>
+    unite("colname", na.rm = T) |>
+    mutate(colname = str_replace_all(colname, coll("\n"), " ")) |>
+    pull(colname)
+  
+  firstcol <- firstsheet[,1]
+  
+  firstsheet.clean <- firstsheet |>
+    filter(row_number() >= 12) |>
+    set_names(c("reporting_unit", colnames)) |>
+    filter(! reporting_unit %in% c("Total","TOTAL","totals","Totals","TOTALS","Reporting Unit Count"),
+           ! reporting_unit %in% c("TOWNS", "CITIES", "VILLAGES"),
+           !is.na(reporting_unit)) |>
+    pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
+    mutate(candidate = word(contestcandidate, 2, sep = "12_|36_|25_|27_|PRESIDENT_VICE PRESIDENT_"),
+           contest = str_remove(contestcandidate, candidate)) |>
+    select(-contestcandidate)
+  
   process_sheet <- function(sheetindex){
     sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
                         .name_repair = "unique_quiet") |>
       janitor::remove_empty(which = "cols")
     
-    startrow <- min(which(str_detect(sheet$...1, "^Town|^TOWN")))
-    
     colnames <- sheet |>
-      select(-1) |>
-      filter(row_number() < startrow-3) |>
+      filter(row_number() < 9) |>
       mutate(rownum = row_number()) |>
       pivot_longer(cols = -rownum) |>
       pivot_wider(names_from = rownum, values_from = value) |>
@@ -1584,8 +1614,9 @@ read_marinette <- function(workbookpath, sheetvector = 2:4, save_output = T){
       unite("colname", na.rm = T) |>
       mutate(colname = str_replace_all(colname, coll("\n"), " ")) |>
       pull(colname)
-    sheet |>
-      filter(row_number() >= startrow) |>
+    
+    bind_cols(firstcol, sheet) |>
+      filter(row_number() >= 12) |>
       set_names(c("reporting_unit", colnames)) |>
       filter(! reporting_unit %in% c("Total","TOTAL","totals","Totals","TOTALS","Reporting Unit Count"),
              ! reporting_unit %in% c("TOWNS", "CITIES", "VILLAGES"),
@@ -1596,9 +1627,10 @@ read_marinette <- function(workbookpath, sheetvector = 2:4, save_output = T){
       select(-contestcandidate)
   }
   
-  dtemp <- map(.x = sheetvector,
+  dtemp <- map(.x = sheetvector[2:length(sheetvector)],
                .f = process_sheet) |>
     list_rbind() |>
+    rbind(firstsheet.clean) |>
     type_convert() |>
     mutate(county = "Marinette",
            across(where(is.character), str_to_upper),

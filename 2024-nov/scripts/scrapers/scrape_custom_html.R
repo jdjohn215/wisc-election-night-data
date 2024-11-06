@@ -45,7 +45,8 @@ scrape_milwaukee <- function(electionurl, save_output = T){
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "VILLAGE OF |TOWN OF |CITY OF |^T |^C |^V "),
            municipality = word(municipality, 1, 1, sep = "\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]")) |>
-    filter(str_detect(reporting_unit, "316", negate = T))
+    filter(str_detect(reporting_unit, "316", negate = T),
+           ! candidate %in% c("BALLOTS CAST - TOTAL"))
   
   #################################################
   # save the output with the timestamped file name
@@ -116,7 +117,8 @@ scrape_jefferson <- function(electionurl, save_output = T){
            across(where(is.character), str_to_upper),
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "VILLAGE OF |TOWN OF |CITY OF |^T |^C |^V "),
-           municipality = word(municipality, 1, sep = coll("(")))
+           municipality = word(municipality, 1, sep = coll("("))) |>
+    filter(! contest %in% c("BALLOT TOTALS"))
   
   #################################################
   # save the output with the timestamped file name
@@ -182,7 +184,8 @@ scrape_rock <- function(electionurl, save_output = T){
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "VILLAGE OF |TOWN OF |CITY OF |^T |^C |^V "),
            municipality = word(municipality, 1, 1, sep = "\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
-           municipality = str_replace(municipality, "BELIOT", "BELOIT"))
+           municipality = str_replace(municipality, "BELIOT", "BELOIT")) |>
+    filter(! candidate %in% c("BALLOTS CAST - TOTAL", "REGISTERED VOTERS - TOTAL"))
   
   #################################################
   # save the output with the timestamped file name
@@ -235,7 +238,8 @@ scrape_waukesha <- function(electionurl, save_output = T){
     filter(municipality != "TOTALS",
            # remove this city of milwaukee ward because it is unpopulated 
            #  and also reported by the MKE Cnty election commission
-           reporting_unit != "CITY MILWAUKEE W317")
+           reporting_unit != "CITY MILWAUKEE W317",
+           ! candidate %in% c("BALLOTS CAST - TOTAL", "REGISTERED VOTERS - TOTAL"))
     
   #################################################
   # save the output with the timestamped file name
@@ -270,7 +274,9 @@ get_all_dane <- function(election_name, save_output = T){
            across(where(is.character), str_to_upper),
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "^T |^C |^V "),
-           municipality = word(municipality, 1, sep = " WD"))
+           municipality = word(municipality, 1, sep = " WD")) |>
+    filter(! contest %in% c("BALLOTS CAST - TOTAL"),
+           ! candidate %in% c("BALLOTS CAST - TOTAL"))
   
   #################################################
   # save the output with the timestamped file name
@@ -381,6 +387,8 @@ read_oneida <- function(precinct_page_url, save_output = T){
   all.results <- df |>
     select(-Totals) |>
     filter(!is.na(contest) & contest != "") |>
+    mutate(across(where(is.character), ~str_remove_all(.x, coll(",")))) |>
+    type_convert() |>
     pivot_longer(cols = -c(candidate, contest), names_to = "reporting_unit", values_to = "votes") |>
     type_convert() |>
     mutate(county = "Oneida",

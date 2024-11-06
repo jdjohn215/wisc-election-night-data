@@ -150,7 +150,7 @@ read_manitowoc(file.directory$file_type[file.directory$county == "Manitowoc"])
 read_marathon(latest_file("Marathon", "raw", T))
 
 #download_returns("Marinette")
-read_marinette(latest_file("Marinette", "raw-export", T))
+read_marinette(latest_file("Marinette", "raw-export", T), sheetvector = 2:4)
 
 # download_returns("Marquette") # might have to download and timestamp manually
 read_marquette(latest_file("Marquette", "raw-export", T), sheetvector = c(2,3,7))
@@ -238,7 +238,7 @@ scrape_waukesha(file.directory$file_url[file.directory$county == "Waukesha"])
 pdf_reader_d(latest_file("Waupaca", "raw-export", T), 1, 99)
 
 #download_returns("Waushara")
-read_waushara(latest_file("Waushara", "raw-export", T), 1:6)
+read_waushara(latest_file("Waushara", "raw-export", T), 1:4)
 
 #download_returns("Winnebago")
 pdf_reader_b2(latest_file("Winnebago", "raw-export", T), 1, 112)
