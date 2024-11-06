@@ -263,9 +263,7 @@ read_pierce <- function(workbookpath, save_output = T){
     pivot_longer(cols = -rownum) |>
     pivot_wider(names_from = rownum, values_from = value) |>
     select(-name) |>
-    mutate(`1` = replace(`1`, is.na(`1`) & is.na(`2`) & is.na(`3`), "NA"),
-           `2` = replace(`2`, is.na(`1`) & is.na(`2`) & is.na(`3`), "NA"),
-           `1` = zoo::na.locf(`1`, na.rm = F),
+    mutate(`1` = zoo::na.locf(`1`, na.rm = F),
            `2` = zoo::na.locf(`2`, na.rm = F)) |>
     unite("header", everything(), sep = "_")
   
@@ -279,6 +277,7 @@ read_pierce <- function(workbookpath, save_output = T){
     filter(reporting_unit != "TOTALS") |>
     pivot_longer(cols = -c(reporting_unit),
                  names_to = "contestcandidate", values_to = "votes") |>
+    mutate(votes = na_if(votes, "-")) |>
     mutate(contestcandidate = str_replace_all(contestcandidate, coll("\r\n"), " ")) |>
     separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
     filter(candidate != "NA") |>

@@ -60,7 +60,8 @@ pdf_reader_c <- function(workbookpath, save_output = T){
            municipality = str_remove(reporting_unit, "VILLAGE OF |TOWN OF |CITY OF |^T |^C |^V |^T-|^C-|^V-"),
            municipality = word(municipality, 1, 1, sep = "\\bW[0-9]|\\bWARD|\\bWD|\\bD[0-9]|\\bW\\b|\\bDISTRICT"),
            across(where(is.character), str_squish)) |>
-    filter(! candidate %in% c("TOTAL VOTES CAST", "OVERVOTES", "UNDERVOTES", "CONTEST TOTAL"))
+    filter(! candidate %in% c("TOTAL VOTES CAST", "OVERVOTES", "UNDERVOTES", "CONTEST TOTAL")) |>
+    type_convert()
   
   #################################################
   # save the output with the timestamped file name
