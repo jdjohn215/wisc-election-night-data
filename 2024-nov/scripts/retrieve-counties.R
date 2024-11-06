@@ -97,22 +97,23 @@ read_dunn(latest_file("Dunn", "raw-export", T))
 #download_returns("Eau Claire") # might have to manually download
 read_eauclaire(latest_file("Eau Claire", "raw-export", T))
 
-# Florence - not yet processed
+#download_returns("Florence")
+read_florence(latest_file("Florence", "raw-export", T))
 
 #download_returns("Fond du Lac") # likely must download manually
-pdf_reader_b2(latest_file("Fond du Lac", "raw-export", T), 1, 158)
+pdf_reader_b2(latest_file("Fond du Lac", "raw-export", T), c(1:5,7:8,10:11,13:76))
 
-# Forest - not yet processed
+#download_returns("Forest")
+read_forest(latest_file("Forest", "raw-export", T))
 
 #download_returns("Grant")
 read_grant(latest_file("Grant", "raw", T))
 
 #download_returns("Green")
-pdf_reader_d(latest_file("Green", "raw-export", T), 1, 5)
+#pdf_reader_d(latest_file("Green", "raw-export", T), 1, 5) # Lacks reporting units
 
-# Green Lake - not yet processed
 #download_returns("Green Lake")
-read_greenlake(latest_file("Green Lake", "raw-export", T))
+read_greenlake(latest_file("Green Lake", "raw-export", T), sheetvector = 1:4)
 
 # Iowa - download one drive XLSX files and manually combine into a single workbook, each file on its own sheet
 read_iowa(latest_file("Iowa", "raw", T))
@@ -120,11 +121,12 @@ read_iowa(latest_file("Iowa", "raw", T))
 # Iron - reporting unit data probably not available
 
 #download_returns("Jackson")
-#pdf_reader_d(latest_file("Jackson", "raw-export", T), 1, 20) # needs work
+read_jackson(latest_file("Jackson", "raw-export", T)) # had to manually edit
 
 #scrape_jefferson(file.directory$file_url[file.directory$county == "Jefferson"])
 
-# Juneau - reporting unit data likely unavailable
+#download_returns("Juneau")
+read_juneau(latest_file("Juneau", "raw-export", T))
 
 #download_returns("Kenosha") # this step not needed when downloading directly from Kevin's repo
 read_kenosha(file.directory$file_url[file.directory$county == "Kenosha"])

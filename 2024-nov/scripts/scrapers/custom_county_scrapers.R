@@ -1302,32 +1302,33 @@ read_crawford <- function(workbookpath, save_output = T){
 ################################################################################
 
 ################################################################################
-read_greenlake <- function(workbookpath, save_output = T){
-  sheetvector <- excel_sheets(workbookpath)
+read_greenlake <- function(workbookpath, sheetvector = 1:4, save_output = T){
   
   process_sheet <- function(sheetindex){
     sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
                         .name_repair = "unique_quiet") |>
       janitor::remove_empty(which = "cols")
     sheet
-    headerstart <- if_else(!is.na(sheet$...1[1]),
-                           true = 4, false = 1)
+    headerstart <- which(str_detect(sheet$...1, "PRESIDENTIAL AND GENERAL"))
     startrow <- min(which(str_detect(sheet$...1, "^TOWN")))
     
-    colnames <- sheet[headerstart:(startrow-1),] |>
+    colnames <- sheet[(headerstart+1):(startrow-1),] |>
       mutate(rownum = row_number()) |>
       pivot_longer(cols = -rownum) |>
       pivot_wider(names_from = rownum, values_from = value) |>
       mutate(across(where(is.character), ~zoo::na.locf(.x, na.rm = F))) |>
       select(-name) |>
-      unite("colname", na.rm = T) |>
+      unite("colname", na.rm = T, sep = "_") |>
+      mutate(colname = str_squish(colname)) |>
       pull(colname)
     sheet |>
-      filter(row_number() >= startrow) |>
+      filter(row_number() >= startrow,
+             ...1 != "Total") |>
       set_names(colnames) |>
-      rename(reporting_unit = 1) |>
+      janitor::remove_empty("cols") |>
+      rename(municipality = 1, reporting_unit = 2) |>
       filter(reporting_unit != "Total|TOTAL|totals|Totals|TOTALS") |>
-      pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
+      pivot_longer(cols = -c(municipality, reporting_unit), names_to = "contestcandidate", values_to = "votes") |>
       separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate"))
   }
   
@@ -1337,11 +1338,11 @@ read_greenlake <- function(workbookpath, save_output = T){
     type_convert() |>
     mutate(county = "Green Lake",
            across(where(is.character), str_to_upper),
-           ctv = str_sub(reporting_unit, 1, 1),
+           ctv = str_sub(municipality, 1, 1),
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
-           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-"),
-           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
-           across(where(is.character), str_squish))
+           municipality = str_remove(municipality, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-"),
+           across(where(is.character), str_squish)) |>
+    filter(candidate != "PROVISIONALS")
   
   if(save_output == TRUE){
     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
@@ -1888,3 +1889,187 @@ read_vilas <- function(workbookpath, save_output = T){
 ################################################################################
 
 ################################################################################
+read_florence <- function(workbookpath, save_output = T){
+  sheetvector <- excel_sheets(workbookpath)
+  
+  read_sheet <- function(sheetindex){
+    sheet.orig <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
+                             .name_repair = "unique_quiet", col_types = "text")
+    start.row <- min(which(str_detect(sheet.orig$...1, "^Muni")), na.rm = T)
+    
+    sheet.orig |>
+      filter(row_number() > start.row) |>
+      set_names(str_replace_all(unlist(sheet.orig[start.row,]), coll("\n"), " ")) |>
+      select(-10) |>
+      rename(candidate = 1)
+  }
+  
+  
+  dtemp <- map(.x = sheetvector,
+               .f = read_sheet,
+               .progress = T) |>
+    list_rbind() |>
+    filter(candidate != "Registered write-ins") |>
+    mutate(contest = if_else(is.na(`Aurora wards 1-3`), candidate, NA),
+           contest = zoo::na.locf(contest)) |>
+    select(contest, everything()) |>
+    filter(contest != candidate,
+           contest != "State",
+           ! candidate %in% c("Total Absentees","Outstanding Absentees","Provisionals","Referendum")) |>
+    pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
+    mutate(candidate = str_replace_all(candidate, coll("\n"), " "),
+           reporting_unit = str_replace_all(reporting_unit, coll("\n"), " ")) |>
+    mutate(county = "Florence",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           ctv = "T",
+           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^CITY |^VILLAGE |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll("-")),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish))
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
+
+################################################################################
+read_forest <- function(workbookpath, save_output = T){
+  sheet1 <- read_excel(workbookpath, sheet = 1, col_names = F,
+                       .name_repair = "unique_quiet", col_types = "text")
+  
+  colnames <- sheet1 |>
+    filter(row_number() < 4) |>
+    mutate(rownum = row_number()) |>
+    pivot_longer(cols = -rownum) |>
+    pivot_wider(names_from = rownum, values_from = value) |>
+    mutate(`1` = zoo::na.locf(`1`, na.rm = F),
+           `2` = zoo::na.locf(`2`, na.rm = F),
+           across(where(is.character), ~str_replace(.x, coll("\n"), " "))) |>
+    unite("colname", `1`, `2`, `3`, na.rm = T)
+  
+  dtemp <- sheet1 |>
+    filter(row_number() > 4,
+           !is.na(...1)) |>
+    set_names(colnames$colname) |>
+    janitor::remove_empty("cols") |>
+    rename(reporting_unit = 1) |>
+    filter(reporting_unit != "Totals") |>
+    pivot_longer(cols = -c(reporting_unit), names_to = "contestcandidate",
+                 values_to = "votes") |>
+    separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
+    mutate(county = "Forest",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           municipality = word(reporting_unit, 1, sep = coll(",")),
+           ctv = if_else(municipality == "CITY OF CRANDON", "C", "T"),
+           municipality = str_remove(municipality, "CITY OF |TOWN OF |"),
+           across(where(is.character), str_squish)) |>
+    filter(candidate != "PROVISIONAL BALLOTS")
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
+
+################################################################################
+read_jackson <- function(workbookpath, save_output = T){
+  sheetvector <- excel_sheets(workbookpath)
+  
+  read_sheet <- function(sheetindex){
+    sheet.orig <- read_excel(workbookpath, sheet = sheetindex, col_names = T,
+                             .name_repair = "unique_quiet", col_types = "text")
+    
+    sheet.orig |>
+      rename(municipality = 1, reporting_unit = 2, contest = Office) |>
+      pivot_longer(cols = -c(municipality, reporting_unit, contest), 
+                   names_to = "candidate", values_to = "votes") |>
+      mutate(candidate = str_replace_all(candidate, coll("\n"), " "))
+  }
+  
+  
+  dtemp <- map(.x = sheetvector,
+               .f = read_sheet,
+               .progress = T) |>
+    list_rbind() |>
+    mutate(candidate = str_replace_all(candidate, coll("\r\n"), " "),
+           reporting_unit = str_replace_all(reporting_unit, coll("\n"), " ")) |>
+    mutate(county = "Jackson",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           reporting_unit = paste(municipality, reporting_unit),
+           ctv = str_sub(municipality, 1, 1),
+           municipality = str_remove(municipality, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^CITY |^VILLAGE |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll("-")),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish))
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
+
+################################################################################
+read_juneau <- function(workbookpath, save_output = T){
+  sheetvector <- excel_sheets(workbookpath)
+  
+  read_sheet <- function(sheetindex){
+    sheet.orig <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
+                             .name_repair = "unique_quiet", col_types = "text")
+    contestname <- sheet.orig$...3[1]
+    contestname <- case_when(
+      any(str_detect(sheet.orig, "Van Orden")) ~ "Representative in Congress District 3",
+      any(str_detect(sheet.orig, "Tiffany")) ~ "Representative in Congress District 7",
+      any(str_detect(sheet.orig, "Ballweg")) ~ "State Senator District 14",
+      any(str_detect(sheet.orig, "Testin")) ~ "State Senator District 24",
+      any(str_detect(sheet.orig, "Kurtz")) ~ "Assembly 41",
+      any(str_detect(sheet.orig, "Gomez")) ~ "Assembly 70",
+      any(str_detect(sheet.orig, "Krug")) ~ "Assembly 72",
+      any(str_detect(sheet.orig, "Hamm")) ~ "District Attorney",
+      any(str_detect(sheet.orig, "YES")) ~ "Ref Eligibility",
+      TRUE ~ contestname
+    )
+    startrow <- which(str_detect(sheet.orig$...1, "Municipality"))
+    sheet.orig |>
+      filter(row_number() > startrow) |>
+      set_names(unlist(sheet.orig[startrow,])) |>
+      janitor::remove_empty("cols") |>
+      rename(municipality = 1, reporting_unit = 2) |>
+      pivot_longer(cols = -c(municipality, reporting_unit), 
+                   names_to = "candidate", values_to = "votes") |>
+      mutate(candidate = str_replace_all(candidate, coll("\n"), " "),
+             contest = contestname) |>
+      filter(municipality != "Total")
+  }
+  
+  
+  dtemp <- map(.x = sheetvector,
+               .f = read_sheet,
+               .progress = T) |>
+    list_rbind() |>
+    mutate(candidate = str_replace_all(candidate, coll("\r\n"), " "),
+           reporting_unit = str_replace_all(reporting_unit, coll("\n"), " ")) |>
+    mutate(county = "Juneau",
+           across(where(is.character), str_to_upper),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           reporting_unit = paste(municipality, reporting_unit),
+           ctv = str_sub(municipality, 1, 1),
+           municipality = str_remove(municipality, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^CITY |^VILLAGE |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll("-")),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish))
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
