@@ -36,8 +36,6 @@ This page shows the current status of our election night data collection. We are
 
 Please note, [these municipalities](https://elections.wi.gov/central-count-absentee-ballot-municipalities) use a central location to count their absentee ballots. Those results will be added to the appropriate ward totals for each voter. However, the initial ward results shown here may not yet include the central count totals.
 
-***THIS WEBPAGE CURRENTLY INCLUDES ONLY TEMPLATE DATA--NOT ACTUAL ELECTION RESULTS.***
-
 ```{r}
 df.state |>
   pivot_longer(cols = everything()) |>
