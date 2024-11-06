@@ -74,6 +74,48 @@ mke.cnty.replacements <- wards.august |>
   st_make_valid() |>
   st_transform(crs = st_crs(rep.unit.polygons))
 ################################################################################
+# several Door county reporting units from August need to be split
+#   "CITY OF STURGEON BAY WARDS 1-9" becomes:
+#     - CITY OF STURGEON BAY WARDS 1-7,9
+#     - CITY OF STURGEON BAY WARD 8
+#   "CITY OF STURGEON BAY WARDS 16-21" becomes:
+#     - CITY OF STURGEON BAY WARDS 16
+#     - CITY OF STURGEON BAY WARDS 17-21
+#   "TOWN OF EGG HARBOR WARDS 1-3" becomes:
+#     - TOWN OF EGG HARBOR WARDS 1-2
+#     - TOWN OF EGG HARBOR WARDS 3
+#   "TOWN OF STURGEON BAY WARDS 1-2" becomes:
+#     - TOWN OF STURGEON BAY WARD 1
+#     - TOWN OF STURGEON BAY WARD 2
+#   "TOWN OF SEVASTOPOL WARDS 1-5" becomes:
+#     - TOWN OF SEVASTOPOL WARDS 2-5
+#     - TOWN OF SEVASTOPOL WARD 1
+door.cnty.replacements <- wards.august |>
+  mutate(rep_unit = case_when(
+    ward_label %in% c("Sturgeon Bay - C 0001", "Sturgeon Bay - C 0002", "Sturgeon Bay - C 0003",
+                      "Sturgeon Bay - C 0004", "Sturgeon Bay - C 0005", "Sturgeon Bay - C 0006",
+                      "Sturgeon Bay - C 0007", "Sturgeon Bay - C 0009") ~ "CITY OF STURGEON BAY WARDS 1-7,9",
+    ward_label %in% c("Sturgeon Bay - C 0008") ~ "CITY OF STURGEON BAY WARD 8",
+    ward_label %in% c("Sturgeon Bay - C 0016") ~ "CITY OF STURGEON BAY WARD 16",
+    ward_label %in% c("Sturgeon Bay - C 0017","Sturgeon Bay - C 0018","Sturgeon Bay - C 0019",
+                      "Sturgeon Bay - C 0020","Sturgeon Bay - C 0021") ~ "CITY OF STURGEON BAY WARDS 17-21",
+    ward_label %in% c("EGG HARBOR - T 0001", "EGG HARBOR - T 0001") ~ "TOWN OF EGG HARBOR WARDS 1-2",
+    ward_label %in% c("EGG HARBOR - T 0003") ~ "TOWN OF EGG HARBOR WARD 3",
+    ward_label %in% c("STURGEON BAY - T 0001") ~ "TOWN OF STURGEON BAY WARD 1",
+    ward_label %in% c("STURGEON BAY - T 0002") ~ "TOWN OF STURGEON BAY WARD 2",
+    ward_label %in% c("SEVASTOPOL - T 0002", "SEVASTOPOL - T 0003",
+                      "SEVASTOPOL - T 0004", "SEVASTOPOL - T 0005") ~ "TOWN OF SEVASTOPOL WARDS 2-5",
+    ward_label %in% c("SEVASTOPOL - T 0001") ~ "TOWN OF SEVASTOPOL WARD 1",
+    TRUE ~ NA
+  )) |>
+  filter(!is.na(rep_unit)) |>
+  mutate(county = "DOOR",
+         MCD_FIPS = str_sub(WARD_FIPS, 1, 10)) |>
+  group_by(county, ctv, municipality, MCD_FIPS, rep_unit) |>
+  summarise(.groups = "drop") |>
+  st_make_valid() |>
+  st_transform(crs = st_crs(rep.unit.polygons))
+################################################################################
 # The City of Oshkosh added some wards, thanks to annexations
 winnebago <- st_read("2024-nov/rep-unit-polygons/Winnebago/WinnebagoCountyWards_11_05_24.shp") |>
   mutate(MCD_FIPS = paste0("55139", COUSUBFP),
@@ -119,6 +161,14 @@ updated.rep.units <- rep.unit.polygons |>
                            "VILLAGE OF RIVER HILLS WARDS 1-2")) |>
   rmapshaper::ms_erase(mke.cnty.replacements) |>
   bind_rows(mke.cnty.replacements) |>
+  # replace the Door county wards
+  filter(! rep_unit %in% c("CITY OF STURGEON BAY WARDS 1-9",
+                           "CITY OF STURGEON BAY WARDS 16-21",
+                           "TOWN OF EGG HARBOR WARDS 1-3",
+                           "TOWN OF STURGEON BAY WARDS 1-2",
+                           "TOWN OF SEVASTOPOL WARDS 1-5")) |>
+  rmapshaper::ms_erase(door.cnty.replacements) |>
+  bind_rows(door.cnty.replacements) |>
   # replace the Winnebago county wards
   filter(MCD_FIPS != "5513960500") |>
   rmapshaper::ms_erase(erase = winnebago.replacements, remove_slivers = T) |>

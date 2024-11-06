@@ -81,7 +81,8 @@ pdf_reader_a <- function(pdfpath, save_output = T){
            municipality = word(municipality, 1, 1, sep = "\\bWARD|\\bWD|\\bWARD|\\bD[0-9]|\\bW[0-9]|\\bW\\b|\\bW[0-9]"),
            municipality = str_remove_all(municipality, coll("-")),
            municipality = str_remove_all(municipality, coll(",")),
-           across(where(is.character), str_squish))
+           across(where(is.character), str_squish)) |>
+    filter(! candidate %in% c("UNDERVOTES", "TOTAL VOTES CAST", "OVERVOTES", "CONTEST TOTALS"))
   
   #################################################
   # save the output with the timestamped file name

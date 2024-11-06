@@ -1,7 +1,7 @@
 library(tidyverse)
 library(readxl)
 
-pdf_reader_b <- function(workbookpath, firstsheet, lastsheet, save_output = T){
+pdf_reader_b <- function(workbookpath, sheetvector, save_output = T){
   # the list of sheets in the workbook
   sheet.names <- excel_sheets(workbookpath)
   
@@ -9,7 +9,7 @@ pdf_reader_b <- function(workbookpath, firstsheet, lastsheet, save_output = T){
   read_election_sheet <- function(sheetno, workbookpath){
     sheet.full <- read_excel(workbookpath, sheet = sheetno,
                              col_names = F, .name_repair = "unique_quiet")
-    table.start <- which(sheet.full$...1 == "Precinct")
+    table.start <- min(which(sheet.full$...1 == "Precinct"))
     contest.name <- ifelse(table.start > 1, str_remove(sheet.full$...1[1],
                                                        coll("**** - Insufficient Turnout to Protect Voter Privacy")),
                            NA)
@@ -37,7 +37,7 @@ pdf_reader_b <- function(workbookpath, firstsheet, lastsheet, save_output = T){
   }
   
   # process all the sheets individually
-  all.sheets <- map(.x = firstsheet:lastsheet,
+  all.sheets <- map(.x = sheetvector,
                     .f = ~read_election_sheet(.x, 
                                               workbookpath = workbookpath), 
                     .progress = T)

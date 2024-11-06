@@ -86,7 +86,7 @@ read_crawford(latest_file("Crawford", "raw-export", T))
 pdf_reader_c(latest_file("Dodge", "raw-export", T))
 
 #download_returns("Door")
-pdf_reader_b(latest_file("Door", "raw-export", T), 1, 102)
+pdf_reader_b(latest_file("Door", "raw-export", T), sheetvector = c(1:4,6:7,9:44))
 
 #download_returns("Douglas")
 pdf_reader_a(latest_file("Douglas", "raw", T))
@@ -120,7 +120,7 @@ read_iowa(latest_file("Iowa", "raw", T))
 # Iron - reporting unit data probably not available
 
 #download_returns("Jackson")
-pdf_reader_d(latest_file("Jackson", "raw-export", T), 1, 82)
+#pdf_reader_d(latest_file("Jackson", "raw-export", T), 1, 20) # needs work
 
 #scrape_jefferson(file.directory$file_url[file.directory$county == "Jefferson"])
 
