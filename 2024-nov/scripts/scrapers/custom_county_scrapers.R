@@ -1335,37 +1335,73 @@ read_greenlake <- function(workbookpath, save_output = T){
 ################################################################################
 
 ################################################################################
-read_marquette <- function(workbookpath, sheetvector, save_output = T){
-  process_sheet <- function(sheetindex){
-    sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
-                        .name_repair = "unique_quiet") |>
-      janitor::remove_empty(which = "cols")
-    
-    startrow <- min(which(str_detect(sheet$...1, "^Town|^TOWN")))
-    
-    colnames <- sheet |>
-      filter(row_number() < startrow) |>
-      mutate(rownum = row_number()) |>
-      pivot_longer(cols = -rownum) |>
-      pivot_wider(names_from = rownum, values_from = value) |>
-      mutate(across(.cols = any_of(c("1","2","3")),
-                    .f = ~zoo::na.locf(.x, na.rm = F))) |>
-      select(-name) |>
-      unite("colname", na.rm = T) |>
-      mutate(colname = str_replace_all(colname, coll("\n"), " ")) |>
-      pull(colname)
-    sheet |>
-      filter(row_number() >= startrow) |>
-      set_names(colnames) |>
-      rename(reporting_unit = 1) |>
-      filter(reporting_unit != "Total|TOTAL|totals|Totals|TOTALS") |>
-      pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
-      separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate"))
-  }
+read_marquette <- function(workbookpath, sheetvector = c(2,3,4), save_output = T){
+  sheet1 <- read_excel(workbookpath, sheet = sheetvector[1], col_names = F,
+                       .name_repair = "unique_quiet", skip = 24)
+  colnames.1 <- sheet1 |>
+    filter(row_number() < 4) |>
+    mutate(rownum = row_number()) |>
+    pivot_longer(cols = -rownum) |>
+    pivot_wider(names_from = rownum, values_from = value) |>
+    mutate(across(.cols = any_of(c("1","2","3")),
+                  .f = ~zoo::na.locf(.x, na.rm = F))) |>
+    select(-name) |>
+    unite("colname", na.rm = T) |>
+    mutate(colname = str_replace_all(colname, coll("\n"), " "))
   
-  dtemp <- map(.x = sheetvector,
-               .f = process_sheet) |>
-    list_rbind() |>
+  sheet1.1 <- sheet1 |>
+    filter(row_number() > 3) |>
+    set_names(colnames.1$colname) |>
+    rename(reporting_unit = 1) |>
+    filter(reporting_unit != "TOTAL VOTES") |>
+    pivot_longer(cols = -reporting_unit, names_to = "candidate", values_to = "votes") |>
+    mutate(contest = "PRESIDENT")
+  
+  ##############
+  sheet2.1 <- read_excel(workbookpath, sheet = sheetvector[2], col_names = F,
+                       .name_repair = "unique_quiet", n_max = 26)
+  colnames.2.1 <- sheet2.1 |>
+    filter(row_number() < 4) |>
+    mutate(rownum = row_number()) |>
+    pivot_longer(cols = -rownum) |>
+    pivot_wider(names_from = rownum, values_from = value) |>
+    mutate(across(.cols = any_of(c("1","2","3")),
+                  .f = ~zoo::na.locf(.x, na.rm = F))) |>
+    select(-name) |>
+    unite("colname", na.rm = T) |>
+    mutate(colname = str_replace_all(colname, coll("\n"), " "))
+  sheet2.1.2 <- sheet2.1 |>
+    filter(row_number() > 3) |>
+    set_names(colnames.2.1$colname) |>
+    rename(reporting_unit = 1) |>
+    filter(reporting_unit != "TOTAL VOTES") |>
+    pivot_longer(cols = -reporting_unit, names_to = "candidate", values_to = "votes") |>
+    mutate(contest = word(candidate, 1, sep = "_"),
+           candidate = str_remove(candidate, contest))
+  
+  ###########################
+  sheet2.2 <- read_excel(workbookpath, sheet = sheetvector[2], col_names = F,
+                         .name_repair = "unique_quiet", skip = 27)
+  colnames.2.2 <- sheet2.2 |>
+    filter(row_number() < 4) |>
+    mutate(rownum = row_number()) |>
+    pivot_longer(cols = -rownum) |>
+    pivot_wider(names_from = rownum, values_from = value) |>
+    mutate(across(.cols = any_of(c("1","2","3")),
+                  .f = ~zoo::na.locf(.x, na.rm = F))) |>
+    select(-name) |>
+    unite("colname", na.rm = T) |>
+    mutate(colname = str_replace_all(colname, coll("\n"), " "))
+  sheet2.2.2 <- sheet2.2 |>
+    filter(row_number() > 3) |>
+    set_names(colnames.2.2$colname) |>
+    rename(reporting_unit = 1) |>
+    filter(reporting_unit != "TOTAL VOTES") |>
+    pivot_longer(cols = -reporting_unit, names_to = "candidate", values_to = "votes") |>
+    mutate(contest = word(candidate, 1, sep = "_"),
+           candidate = str_remove(candidate, contest))
+  
+  dtemp <- bind_rows(sheet1.1, sheet2.1.2, sheet2.2.2) |>
     type_convert() |>
     mutate(county = "Marquette",
            across(where(is.character), str_to_upper),
@@ -1374,7 +1410,8 @@ read_marquette <- function(workbookpath, sheetvector, save_output = T){
            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-"),
            municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
            municipality = str_remove(municipality, coll(",")),
-           across(where(is.character), str_squish))
+           across(where(is.character), str_squish)) |>
+    filter(municipality != "SCROLL DOWN")
   
   if(save_output == TRUE){
     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
@@ -1664,8 +1701,6 @@ read_langlade <- function(workbookpath, save_output = T){
            contest = zoo::na.locf(contest)) |>
     filter(contest != candidate) |>
     select(contest, everything()) |>
-    # the zeroes show a value of 5 in this column, so remove that here
-    mutate(`TOWN ACKLEY` = if_else(`TOWN ACKLEY` == Total, "0", `TOWN ACKLEY`)) |>
     select(-Total) |>
     pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
     mutate(across(where(is.character), ~str_replace(.x, coll("\n"), " ")))
@@ -1675,7 +1710,7 @@ read_langlade <- function(workbookpath, save_output = T){
     rename(candidate = 1) |>
     mutate(contest = if_else(is.na(`TOWN ACKLEY`) & !is.na(candidate),
                              true = candidate, false = NA),
-           contest = zoo::na.locf(contest)) |>
+           contest = zoo::na.locf(contest, na.rm = F)) |>
     filter(contest != candidate) |>
     select(contest, everything()) |>
     # the zeroes show a value of 5 in this column, so remove that here
@@ -1751,4 +1786,46 @@ read_dunn <- function(workbookpath, save_output = T){
   }
   dtemp
 }
+################################################################################
+
+################################################################################
+read_grant <- function(workbookpath, save_output = T){
+  sheet1 <- read_excel(workbookpath, sheet = 1, col_names = T,
+                       .name_repair = "unique_quiet", col_types = "text")
+  
+  colnames <- tibble(candidate = colnames(sheet1)) |>
+    mutate(contest = if_else(str_detect(candidate, "SCATTERING"),
+                             str_squish(str_remove(candidate, "SCATTERING")), NA)) |>
+    fill(contest, .direction = "up") |>
+    mutate(contest = if_else(row_number() < 4, NA, contest)) |>
+    unite("colname", contest, candidate, na.rm = T) |>
+    mutate(colname = str_replace(colname, coll(":"), "_"),
+           colname = str_replace_all(colname, coll("\n"), " "),
+           colname = str_replace(colname, "Potosi School District General Obligation Bonds ", "Potosi School District General Obligation Bonds_"))
+  
+  dtemp <- sheet1 |>
+    set_names(colnames$colname) |>
+    select(-1) |>
+    rename(reporting_unit = GE2024Jurisdiction, municipality = Municipality) |>
+    pivot_longer(cols = -c(reporting_unit, municipality), names_to = "contestcandidate",
+                 values_to = "votes") |>
+    filter(! contestcandidate %in% c("GlobalID", "created_user", "created_date", "last_edited_user", "last_edited_date")) |>
+    separate(contestcandidate, sep = "_(?!.*_)", into = c("contest", "candidate")) |>
+    mutate(county = "Grant",
+           across(where(is.character), str_to_upper),
+           ctv = str_sub(reporting_unit, 1, 1),
+           reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           reporting_unit = str_replace(reporting_unit, "MENOMOINE", "MENOMONIE"),
+           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|^T [/]|^C [/]|^V [/]|TOWN OF |VILLAGE OF |CITY OF |^T-|^C-|^V-|^CITY |^VILLAGE |^T |^V |^C "),
+           municipality = word(municipality, 1, sep = "\\bW\\b|\\bW[0-9]|\\bWD|\\bWARD|\\bD[0-9]"),
+           municipality = str_remove(municipality, coll(",")),
+           across(where(is.character), str_squish))
+  
+  if(save_output == TRUE){
+    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+  }
+  dtemp
+}
+################################################################################
+
 ################################################################################

@@ -105,7 +105,7 @@ pdf_reader_b2(latest_file("Fond du Lac", "raw-export", T), 1, 158)
 # Forest - not yet processed
 
 #download_returns("Grant")
-pdf_reader_d(latest_file("Grant", "raw-export", T), 1, 80)
+read_grant(latest_file("Grant", "raw", T))
 
 #download_returns("Green")
 pdf_reader_d(latest_file("Green", "raw-export", T), 1, 5)
@@ -153,7 +153,7 @@ read_marathon(latest_file("Marathon", "raw", T))
 read_marinette(latest_file("Marinette", "raw-export", T), sheetvector = 2:4)
 
 # download_returns("Marquette") # might have to download and timestamp manually
-read_marquette(latest_file("Marquette", "raw-export", T), sheetvector = c(2,3,7))
+read_marquette(latest_file("Marquette", "raw-export", T), sheetvector = c(2,3,4))
 
 # Menominee - reporting unit data probably not available
 
@@ -188,7 +188,7 @@ pdf_reader_a(latest_file("Portage", "raw", T))
 # Price - reporting unit data probably not available
 
 #download_returns("Racine") # likely must download manually
-pdf_reader_b(latest_file("Racine", "raw-export", T), 1, 100)
+pdf_reader_b(latest_file("Racine", "raw-export", T), sheetvector = c(1:100))
 
 #download_returns("Richland")
 read_richland(latest_file("Richland", "raw-export", T))
