@@ -11,6 +11,8 @@ In both cases, I created allocation weights from the old ward geography to the n
 
 Most of the ward boundaries represented by this reporting unit GIS file were collected by the LTSB in July of 2024. In instances where ward boundaries had clearly changed, I obtained new ward files from county clerks. I cannot guarantee that the ward boundaries shown here precisely match those under which the election was administered.
 
+The file `rep-units-with-2020-census-block-stats.csv` contains demographic data from the 2020 census allocated into each reporting unit. I assigned census blocks to reporting units based on centroid intersection. The `pop_per_sq_mi` variable is the result of dividing total 2020 population by the land area of each reporting unit. I calculated the land area by erasing surface water before computing the remaining polygon size.
+
 ## Coverage
 
 I provide reporting units for 69/72 counties. For the remaining counties of Green, Sauk, and Iron, I include a row containing their candidate totals.
