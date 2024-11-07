@@ -7,7 +7,7 @@ I have also added Democratic and Republican candidate totals to each ward for pa
 * 2022, a custom reporting unit shapefile of my own creation with official, certified 2022 results
 * 2012-2020, a disaggregated ward file created by the Wisconsin Legislative Technology Services Bureau.
 
-In both cases, I created allocation weights from the old ward geography to the new one using the addresses of every voter in the L2 Wisconsin voter file. Keep in mind, there is uncertainty associated with this process. Individual ward data, particularly for past elections, may be innaccurate.
+In both cases, I created allocation weights from the old ward geography to the new one using the addresses of every voter in the L2 Wisconsin voter file. Keep in mind, there is uncertainty associated with this process. Individual ward data, particularly for past elections, may be innaccurate. Vote allocations from past elections include fractions.
 
 Most of the ward boundaries represented by this reporting unit GIS file were collected by the LTSB in July of 2024. In instances where ward boundaries had clearly changed, I obtained new ward files from county clerks. I cannot guarantee that the ward boundaries shown here precisely match those under which the election was administered.
 

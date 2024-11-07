@@ -48,8 +48,7 @@ combined.results <- uss.votes |>
   inner_join(pre.votes) |>
   inner_join(matched.polygons) |>
   st_as_sf() |>
-  select(-rep_unit_2024) |>
-  select(county, ctv, municipality, MCD_FIPS, reporting_unit, ends_with("24"),
+  select(county, ctv, municipality, MCD_FIPS, reporting_unit, rep_unit_2024, ends_with("24"),
          ends_with("22"), ends_with("20"), ends_with("18"), ends_with("16"),
          ends_with("14"), ends_with("12"))
 nrow(combined.results) == nrow(matched.polygons)

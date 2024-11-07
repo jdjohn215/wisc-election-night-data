@@ -11,68 +11,66 @@ library(sf)
 library(leaflet)
 library(gt)
 
-rep.unit.tables <- readRDS(here::here("2024-nov/qmd-status/rep-unit-html-tables.rds"))
-df <- st_read(here::here("2024-nov/processed/matched-reporting-unit-results.geojson")) |>
+rep.unit.tables <- readRDS(here::here("2024-nov/analysis/rep-unit-html-tables.rds"))
+df <- sf::st_read(here::here("2024-nov/analysis/election-results-2012-2024.geojson")) |>
+  # add two-party totals
+  mutate(USSTOT24 = USSDEM24 + USSREP24,
+         USSTOT22 = USSDEM22 + USSREP22,
+         USSTOT16 = USSDEM16 + USSREP16,
+         USSTOT18 = USSDEM18 + USSREP18,
+         PRETOT24 = PREDEM24 + PREREP24,
+         PRETOT20 = PREDEM20 + PREREP20,
+         PRETOT16 = PREDEM16 + PREREP16) |>
+  # compute margins
+  mutate(PREMARG24 = (PREDEM24/PRETOT24 - PREREP24/PRETOT24)*100,
+         PREMARG20 = (PREDEM20/PRETOT20 - PREREP20/PRETOT20)*100,
+         PREMARG16 = (PREDEM16/PRETOT16 - PREREP16/PRETOT16)*100,
+         USSMARG18 = (USSDEM18/USSTOT18 - USSREP18/USSTOT18)*100,
+         USSMARG22 = (USSDEM22/USSTOT22 - USSREP22/USSTOT22)*100,
+         USSMARG24 = (USSDEM24/USSTOT24 - USSREP24/USSTOT24)*100,
+         PREMARGshift = PREMARG24 - PREMARG20) |>
   mutate(table = as.character(rep.unit.tables),
          label = paste(county, "COUNTY -", reporting_unit, "<br>",
-                       table)) |>
-  filter(PRETOT24 > 0,
-         !is.na(PRETOT24))
+                       table))
 
-df.state <- df |>
-  st_drop_geometry() |>
-  summarise(across(ends_with("24"), ~sum(.x, na.rm = T)),
-            across(ends_with("20"), ~sum(.x, na.rm = T))) |>
-  mutate(across(where(is.numeric), round),
-         PREmarginv24 = PREDEM24 - PREREP24,
-         PREmarginp24 = (PREDEM24/PRETOT24 - PREREP24/PRETOT24)*100,
-         USSmarginv24 = USSDEM24 - USSREP24,
-         USSmarginp24 = (USSDEM24/USSTOT24 - USSREP24/USSTOT24)*100,
-         PREmarginv20 = PREDEM20 - PREREP20,
-         PREmarginp20 = (PREDEM20/PRETOT20 - PREREP20/PRETOT20)*100)
-```
-
-This page shows the current status of our election night data collection. We are collecting, cleaning, and standardizing ward-level (reporting units, technically) results from counties across Wisconsin. Once a reporting unit is processed, it is added to the table and map below.
-
-Please note, [these municipalities](https://elections.wi.gov/central-count-absentee-ballot-municipalities) use a central location to count their absentee ballots. Those results will be added to the appropriate ward totals for each voter. However, the initial ward results shown here may not yet include the central count totals.
-
-
-```{r}
-df.state |>
-  pivot_longer(cols = everything()) |>
-  separate(name, into = c("office", "party","year"), sep = c(3, -2)) |>
-  mutate(office = paste0(office, " 20", year)) |>
-  select(-year) |>
-  pivot_wider(names_from = party, values_from = value) |>
-  gt(rowname_col = "office") |>
-  fmt_number(columns = c(TOT, DEM, REP, marginv), decimals = 0) |>
-  fmt_number(columns = marginp, decimals = 1, pattern = "{x} pt.") |>
-  sub_missing() |>
-  tab_style(style = cell_text(color = "red", weight = "bold"),
-            locations = cells_body(columns = marginv,
-                                   rows = marginv < 0)) |>
-  tab_style(style = cell_text(color = "red", weight = "bold"),
-            locations = cells_body(columns = marginp,
-                                   rows = marginp < 0)) |>
-  tab_style(style = cell_text(color = "blue", weight = "bold"),
-            locations = cells_body(columns = marginv,
-                                   rows = marginv > 0)) |>
-  tab_style(style = cell_text(color = "blue", weight = "bold"),
-            locations = cells_body(columns = marginp,
-                                   rows = marginp > 0)) |>
-  tab_header(title = "Election results in collected reporting units",
-             subtitle = "see map for coverage area. Absentee ballots may not yet be reflected in the 2024 ward totals.") |>
-  tab_source_note("Ward boundaries change between elections. Results from old wards are distributed into the 2024 boundaries based on the number of residents in the overlapping sections.")
 ```
 
 
 ```{r}
 #| column: body-outset
 #| fig-height: 8
+
+margin.palette <- colorBin("RdBu", domain = orig.votes$PREMARG24,
+                           bins = c(-Inf, -25, -15, -5, 5, 15, 25, Inf))
+shift.palette <- colorBin("RdBu", domain = orig.votes$PREMARGshift,
+                          bins = c(-Inf, -10, -6, -2, 2, 6, 10, Inf))
+
 df |>
-  st_transform(crs = 4326) |>
   leaflet() |>
-  addProviderTiles(provider = providers$CartoDB.Positron) |>
-  addPolygons(label = ~lapply(label, htmltools::HTML),
-              weight = 0.5)
+  addMapPane("background_map", zIndex = 410) %>%  # Level 1: bottom
+  addMapPane("polygons", zIndex = 420) %>%        # Level 2: middle
+  addMapPane("labels", zIndex = 430) %>%          # Level 3: top
+  addProviderTiles(provider = providers$CartoDB.PositronNoLabels,
+                   options = pathOptions(pane = "background_map")) |>
+  addPolygons(weight = 1, opacity = 0.25, color = "black",
+              label = ~lapply(label, htmltools::HTML),
+              fillColor = ~margin.palette(PREMARG24),
+              fillOpacity = 0.75,
+              group = "Pres margin 2024",
+              options = pathOptions(pane = "polygons")) |>
+  addPolygons(weight = 1, opacity = 0.25, color = "black",
+              label = ~lapply(label, htmltools::HTML),
+              fillColor = ~shift.palette(PREMARGshift),
+              fillOpacity = 0.75,
+              group = "Pres margin shift, 2020-2024",
+              options = pathOptions(pane = "polygons")) |>
+  addProviderTiles(provider = providers$CartoDB.PositronOnlyLabels,
+                   options = pathOptions(pane = "labels")) |>
+  addLegend(position = "bottomleft", pal = shift.palette, values = ~PREMARGshift,
+            title = "2024 margin - 2020 margin",
+            group = "Pres margin shift, 2020-2024") |>
+  addLegend(position = "bottomleft", pal = margin.palette, values = ~PREMARG24,
+            title = "Harris % minus Trump %", group = "Pres margin 2024") |>
+  addLayersControl(baseGroups = c("Pres margin 2024", "Pres margin shift, 2020-2024"),
+                   options = layersControlOptions(collapsed = F))
 ```
