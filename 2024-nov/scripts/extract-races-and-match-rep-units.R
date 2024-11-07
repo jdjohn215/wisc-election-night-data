@@ -9,11 +9,11 @@ matched.polygons <- complete.polygons |> filter(!is.na(reporting_unit))
 
 uss.contest.names <- all.raw |>
   filter(str_detect(candidate, "HOVDE")) |>
-  group_by(reporting_unit, contest) |>
+  group_by(county, reporting_unit, contest) |>
   summarise()
 pre.contest.names <- all.raw |>
   filter(str_detect(candidate, "TRUMP|\\bVANCE\\b")) |>
-  group_by(reporting_unit, contest) |>
+  group_by(county, reporting_unit, contest) |>
   summarise()
 
 uss.votes <- all.raw |>
@@ -24,7 +24,7 @@ uss.votes <- all.raw |>
     TRUE ~ "other"
   )) |>
   group_by(county, ctv, municipality, reporting_unit, contest) |>
-  mutate(USSTOT24 = sum(votes)) |>
+  mutate(USSTOT24 = sum(votes, na.rm = T)) |>
   ungroup() |>
   filter(candidate2 != "other") |>
   select(-c(candidate, contest)) |>
@@ -38,7 +38,7 @@ pre.votes <- all.raw |>
     TRUE ~ "other"
   )) |>
   group_by(county, ctv, municipality, reporting_unit, contest) |>
-  mutate(PRETOT24 = sum(votes)) |>
+  mutate(PRETOT24 = sum(votes, na.rm = T)) |>
   ungroup() |>
   filter(candidate2 != "other") |>
   select(-c(candidate, contest)) |>
