@@ -19,12 +19,12 @@ pdf_reader_a <- function(pdfpath, save_output = T){
                                                  "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 2]
     } else {
       reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
-                                                 "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 1]
+                                                 "NOVEMBER 5, 2024|NOVEMBER 5,2024|NOVEMBER5, 2024")) + 1]
     }
-    race.start <- min(which(str_detect(page$X1, "Vote For")))-1
+    race.start <- min(which(str_detect(page$X1, "Vote For|VoteFor")))-1
     
     page |>
-      mutate(office = if_else(str_detect(lead(X1, 1), "Vote For"),
+      mutate(office = if_else(str_detect(lead(X1, 1), "Vote For|VoteFor"),
                               true = str_squish(X1),
                               false = NA)) |>
       filter(row_number() >= race.start,
@@ -76,6 +76,8 @@ pdf_reader_a <- function(pdfpath, save_output = T){
     mutate(county = word(word(pdfpath, -1, sep = "/"), 1, sep = " 20")) |>
     mutate(across(where(is.character), str_to_upper),
            reporting_unit = str_remove_all(reporting_unit, coll(".")),
+           reporting_unit = str_squish(str_replace(reporting_unit, "WARD", " WARD")),
+           reporting_unit = str_replace(reporting_unit, "STRONGSPRAIRIE", "STRONGS PRAIRIE"),
            ctv = str_sub(reporting_unit, 1, 1),
            municipality = str_remove(reporting_unit, "TOWN OF |VILLAGE OF |CITY OF |^V OF |^C OF |^V OF |^C\\b|^T\\b|^V\\b"),
            municipality = word(municipality, 1, 1, sep = "\\bWARD|\\bWD|\\bWARD|\\bD[0-9]|\\bW[0-9]|\\bW\\b|\\bW[0-9]"),

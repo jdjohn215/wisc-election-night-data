@@ -520,76 +520,76 @@ read_oconto <- function(workbookpath, save_output = T){
 ################################################################################
 
 ################################################################################
-read_shawano <- function(workbookpath, sheetvector, save_output = T){
-  process_sheet <- function(sheetindex){
-    sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = FALSE,
-                        .name_repair = "unique_quiet")
-    
-    # identify party of contest, if it is a primary
-    party.string <- if_else(word(sheet$...2[1], -1, sep = "\n") %in% c("REPUBLICAN","DEMOCRATIC","LIBERTARIAN","WISCONSIN GREEN"),
-                            true = word(sheet$...2[1], -1, sep = "\n"),
-                            NA)
-    
-    start.row <- first(which(sheet$...1 %in% c("TOWNS", "VILLAGES", "CITIES")))
-    colnames <- sheet |>
-      filter(row_number() < start.row,
-             row_number() > 1) |>
-      mutate(rownum = row_number()) |>
-      pivot_longer(cols = -rownum, names_to = "column") |>
-      mutate(value = str_replace_all(value, coll("\n"), " ")) |>
-      pivot_wider(names_from = rownum, values_from = value) |>
-      mutate(`1` = zoo::na.locf(`1`, na.rm = F),
-             `2` = zoo::na.locf(`2`, na.rm = F)) |>
-      group_by(`2`) |>
-      mutate(`3` = zoo::na.locf(`3`, na.rm = F),
-             `1` = if_else(!is.na(party.string) & !is.na(`1`),
-                           true = paste(party.string, `1`, sep = "_"),
-                           false = `1`)) |>
-      ungroup() |>
-      select(-column) |>
-      unite(col = "colname", na.rm = T) |>
-      # reporting unit stub sometimes accidentally gets added by pdf to spreadsheet conversion
-      mutate(colname = case_when(
-        row_number() == 1 ~ "rep_unit",
-        row_number() == 2 & colname == "" ~ "rep_unit_stub",
-        TRUE ~ colname
-      ))
-    sheet |>
-      filter(row_number() >= start.row) |>
-      set_names(colnames$colname) |>
-      filter(rep_unit != "TOTAL VOTES CAST") |>
-      # unite reporting unit and reporting unit stub if it exists
-      unite("reporting_unit", any_of(c("rep_unit", "rep_unit_stub")), na.rm = T, sep = " ") |>
-      mutate(ctv = if_else(reporting_unit %in% c("TOWNS", "VILLAGES", "CITIES"),
-                           true = reporting_unit,
-                           false = NA),
-             ctv = zoo::na.locf(ctv),
-             reporting_unit = paste(str_sub(ctv, 1, 1), reporting_unit)) |>
-      select(-ctv) |>
-      filter(! reporting_unit %in% c("T TOWNS", "C CITIES", "V VILLAGES")) |>
-      pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
-      separate(contestcandidate, into = c("contest", "candidate"), sep = "_(?!.*_)") |>
-      filter(!is.na(votes),
-             # Shawano prints write-in candidate names in some cells instead of vote totals - remove
-             ! (candidate == "Write-in" & str_detect(votes, "[aeiou]")))
-  }
-  
-  dtemp <- map(.x = sheetvector,
-      .f = ~process_sheet(.x)) |>
-    list_rbind() |>
-    type_convert() |>
-    mutate(county = "Shawano",
-           across(where(is.character), str_to_upper),
-           ctv = str_sub(reporting_unit, 1, 1),
-           reporting_unit = str_remove_all(reporting_unit, coll(".")),
-           municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^C |^T |^V "),
-           municipality = word(municipality, 1, sep = coll(",")))
-  
-  if(save_output == TRUE){
-    write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
-  }
-  dtemp
-}
+# read_shawano <- function(workbookpath, sheetvector, save_output = T){
+#   process_sheet <- function(sheetindex){
+#     sheet <- read_excel(workbookpath, sheet = sheetindex, col_names = FALSE,
+#                         .name_repair = "unique_quiet")
+#     
+#     # identify party of contest, if it is a primary
+#     party.string <- if_else(word(sheet$...2[1], -1, sep = "\n") %in% c("REPUBLICAN","DEMOCRATIC","LIBERTARIAN","WISCONSIN GREEN"),
+#                             true = word(sheet$...2[1], -1, sep = "\n"),
+#                             NA)
+#     
+#     start.row <- first(which(sheet$...1 %in% c("TOWNS", "VILLAGES", "CITIES")))
+#     colnames <- sheet |>
+#       filter(row_number() < start.row,
+#              row_number() > 1) |>
+#       mutate(rownum = row_number()) |>
+#       pivot_longer(cols = -rownum, names_to = "column") |>
+#       mutate(value = str_replace_all(value, coll("\n"), " ")) |>
+#       pivot_wider(names_from = rownum, values_from = value) |>
+#       mutate(`1` = zoo::na.locf(`1`, na.rm = F),
+#              `2` = zoo::na.locf(`2`, na.rm = F)) |>
+#       group_by(`2`) |>
+#       mutate(`3` = zoo::na.locf(`3`, na.rm = F),
+#              `1` = if_else(!is.na(party.string) & !is.na(`1`),
+#                            true = paste(party.string, `1`, sep = "_"),
+#                            false = `1`)) |>
+#       ungroup() |>
+#       select(-column) |>
+#       unite(col = "colname", na.rm = T) |>
+#       # reporting unit stub sometimes accidentally gets added by pdf to spreadsheet conversion
+#       mutate(colname = case_when(
+#         row_number() == 1 ~ "rep_unit",
+#         row_number() == 2 & colname == "" ~ "rep_unit_stub",
+#         TRUE ~ colname
+#       ))
+#     sheet |>
+#       filter(row_number() >= start.row) |>
+#       set_names(colnames$colname) |>
+#       filter(rep_unit != "TOTAL VOTES CAST") |>
+#       # unite reporting unit and reporting unit stub if it exists
+#       unite("reporting_unit", any_of(c("rep_unit", "rep_unit_stub")), na.rm = T, sep = " ") |>
+#       mutate(ctv = if_else(reporting_unit %in% c("TOWNS", "VILLAGES", "CITIES"),
+#                            true = reporting_unit,
+#                            false = NA),
+#              ctv = zoo::na.locf(ctv),
+#              reporting_unit = paste(str_sub(ctv, 1, 1), reporting_unit)) |>
+#       select(-ctv) |>
+#       filter(! reporting_unit %in% c("T TOWNS", "C CITIES", "V VILLAGES")) |>
+#       pivot_longer(cols = -reporting_unit, names_to = "contestcandidate", values_to = "votes") |>
+#       separate(contestcandidate, into = c("contest", "candidate"), sep = "_(?!.*_)") |>
+#       filter(!is.na(votes),
+#              # Shawano prints write-in candidate names in some cells instead of vote totals - remove
+#              ! (candidate == "Write-in" & str_detect(votes, "[aeiou]")))
+#   }
+#   
+#   dtemp <- map(.x = sheetvector,
+#       .f = ~process_sheet(.x)) |>
+#     list_rbind() |>
+#     type_convert() |>
+#     mutate(county = "Shawano",
+#            across(where(is.character), str_to_upper),
+#            ctv = str_sub(reporting_unit, 1, 1),
+#            reporting_unit = str_remove_all(reporting_unit, coll(".")),
+#            municipality = str_remove(reporting_unit, "^T[/]|^C[/]|^V[/]|TOWN OF |VILLAGE OF |CITY OF |^C |^T |^V "),
+#            municipality = word(municipality, 1, sep = coll(",")))
+#   
+#   if(save_output == TRUE){
+#     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
+#   }
+#   dtemp
+# }
 ################################################################################
 
 ################################################################################
@@ -2337,5 +2337,119 @@ read_waupaca <- function(workbookpath, save_output = T){
     write_csv(dtemp, paste0("2024-nov/raw-processed/", str_remove(word(workbookpath, -1, sep = "/"), ".pdf|.xlsx"), ".csv"))
   }
   dtemp
+}
+################################################################################
+
+################################################################################
+read_shawano <- function(pdfpath, sheetvector = 1:72, save_output = T){
+  #################################################
+  # read all the data from the PDF
+  pagelist <- pdftools::pdf_text(pdfpath)
+  
+  #################################################
+  # this function processes a single page of the pdf
+  read_pdf_page <- function(pageindex, pagelist){
+    page <- pagelist[pageindex] |> read_delim(col_names = F, delim = "!!",
+                                              col_types = cols(.default = "c"))
+    
+    reporting.unit <- page$X1[which(str_detect(str_to_upper(page$X1),
+                                               "NOVEMBER 5, 2024|NOVEMBER 5,2024")) + 1]
+    race.start <- min(which(str_detect(page$X1, "Vote For|Vote for")))-1
+    
+    page |>
+      mutate(office = if_else(str_detect(lead(X1, 1), "Vote For|Vote for"),
+                              true = str_squish(X1),
+                              false = NA)) |>
+      filter(row_number() >= race.start) |>
+      mutate(office = zoo::na.locf(office),
+             X1 = str_squish(X1)) |>
+      group_by(office) |>
+      filter(row_number() > 2) |>
+      ungroup() |>
+      filter(str_detect(X1, "Precinct Summary|Report generated with", negate = T)) |>
+      mutate(
+        pct = case_when(
+          str_detect(word(X1, -1), "%") ~ word(X1, -1),
+          TRUE ~ NA),
+        votes = case_when(
+          str_detect(word(X1, -1), "%") ~ word(X1, -2),
+          !is.na(as.numeric(str_remove(word(X1, -1), ","))) ~ word(X1, -1),
+          TRUE ~ NA),
+        candidate = case_when(
+          str_detect(word(X1, -1), "%") ~ word(X1, 1, -3),
+          !is.na(as.numeric(str_remove(word(X1, -1), ","))) ~ word(X1, 1, -2),
+          TRUE ~ X1)
+      ) |>
+      select(contest = office, candidate, votes) |>
+      mutate(reporting_unit = reporting.unit)
+  }
+  
+  #################################################
+  # process each page of the PDF in turn
+  not.cshawno <- map(.x = sheetvector,
+                          .f = ~read_pdf_page(.x, pagelist),
+                          .progress = T) |>
+    list_rbind() |>
+    filter(!is.na(votes),
+           votes != "VOTE") |>
+    mutate(reporting_unit = str_replace(reporting_unit, "MATTON", "MATTOON"))
+  
+  
+  #################################################
+  # read c shawano from xlsx
+  cshawano.orig <- read_excel(latest_file("Shawano", "raw-export", T), sheet = 73,
+                              col_names = F, .name_repair = "unique_quiet")
+  tab.start <- min(which(str_detect(cshawano.orig$...1, "Vote for")))
+  cshawano.2 <- cshawano.orig |>
+    filter(row_number() >= tab.start-1) |>
+    mutate(contest = if_else(lead(...1 == "Vote for 1"), ...1, NA),
+           contest = zoo::na.locf(contest)) |>
+    select(contest, candidate = 1, everything()) |>
+    select(-c(...8, ...9)) |>
+    filter(contest != candidate)
+  
+  cshawano.3 <- cshawano.2 |>
+    set_names(c("contest", "candidate", unlist(cshawano.2[1,][3:8]))) |>
+    filter(candidate != "Vote for 1") |>
+    pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
+    mutate(reporting_unit = paste("C Shawano", reporting_unit))
+  
+  all.results.long <- bind_rows(not.cshawno, cshawano.3) |>
+    type_convert() |>
+    mutate(county = word(word(pdfpath, -1, sep = "/"), 1, sep = " 20")) |>
+    mutate(across(where(is.character), str_to_upper),
+           ctv = str_extract(reporting_unit, "\\bC\\b|\\bT\\b|\\bV\\b"),
+           municipality = str_remove(reporting_unit, "TOWN OF |VILLAGE OF |CITY OF |\\bV\\b|\\bC\\b|\\bT\\b"),
+           municipality = word(municipality, 1, 1, sep = "\\bWARD|\\bWD|\\bWARD|\\bD[0-9]"),
+           across(where(is.character), str_squish)) |>
+    mutate(contest = case_when(
+      contest == "TERM JAN. 3, 2025 TO JAN. 3, 2027" ~ "REPRESENTATIVE IN CONGRESS 8TH DISTRICT TERM JAN. 3, 2025 TO JAN. 3, 2027",
+      contest == "TERM ENDING JAN. 3, 2025" ~ "REPRESENTATIVE IN CONGRESS 8TH DISTRICT TERM JAN. 3, 2025 TO JAN. 3, 2027",
+      contest == "DISTRICT 6" ~ "REPRESENTATIVE TO THE ASSEMBLY DISTRICT 6",
+      contest == "DISTRICT 2" ~ "STATE SENATOR DISTRICT 2",
+      TRUE ~ contest
+    )) |>
+    mutate(county = "SHAWANO")
+  
+  
+  ################################################
+  # # add T Fairbanks which isn't currently included in the municipalities but is in the totals
+  # tribble(
+  #   ~contest, ~candidate, ~votes,
+  #   "President of the United States", "Harris/Walz (DEM)", 7311 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "HARRIS")], na.rm = T),
+  #   "President of the United States", "TRUMP/VANCE (REP)", 15773 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "TRUMP")], na.rm = T),
+  #   "UNITED STATES SENATOR", "TAMMY BALDWIN (DEM)", 7529 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "BALDWIN")], na.rm = T),
+  #   "UNITED STATES SENATOR", "ERIC HOVDE (REP)", 14957 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "HOVDE")], na.rm = T)
+  # )
+  #################################################
+  # save the output with the timestamped file name
+  if(save_output == T){
+    write_csv(all.results.long, paste0("2024-nov/raw-processed/",
+                                       str_remove(word(pdfpath, -1, sep = "/"), ".pdf"), ".csv"))
+  }
+  
+  #################################################
+  # show the results (useful for quickly confirming that votes are numeric)
+  all.results.long
 }
 ################################################################################

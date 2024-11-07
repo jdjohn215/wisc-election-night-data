@@ -193,7 +193,7 @@ read_sauk(file.directory$file_type[file.directory$county == "Sauk"])
 read_sawyer(latest_file("Sawyer", "raw-export", T))
 
 #download_returns("Shawano")
-read_shawano(latest_file("Shawano", "raw-export", T), sheetvector = 1:5)
+read_shawano(latest_file("Shawano", "raw", T), 1:72)
 
 #download_returns("Sheboygan") # likely must download manually
 #pdf_reader_d(latest_file("Sheboygan", "raw-export", T), 5, 25) # needs some work
