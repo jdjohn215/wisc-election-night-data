@@ -3,7 +3,8 @@ rm(list = ls())
 library(tidyverse)
 library(sf)
 
-all.raw <- read_csv("2024-nov/processed/all-raw-processed.csv")
+all.raw <- read_csv("2024-nov/processed/all-raw-processed.csv") |>
+  filter(! candidate %in% c("CONTESTTOTALS","PROVISIONAL BALLOTS"))
 complete.polygons <- st_read("2024-nov/processed/all-polygons-with-match-status.geojson")
 matched.polygons <- complete.polygons |> filter(!is.na(reporting_unit))
 
@@ -37,6 +38,7 @@ pre.votes <- all.raw |>
     str_detect(candidate, "TRUMP|\\bVANCE\\b") ~ "PREREP24",
     TRUE ~ "other"
   )) |>
+  filter(!is.na(candidate)) |>
   group_by(county, ctv, municipality, reporting_unit, contest) |>
   mutate(PRETOT24 = sum(votes, na.rm = T)) |>
   ungroup() |>
