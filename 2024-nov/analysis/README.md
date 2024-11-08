@@ -29,3 +29,7 @@ I confirmed that my 2024 candidate totals match the values from the Associated P
 ## Citations
 
 You are free to use this data with attribution. Please cite me in my professional capacity: John Johnson, Research Fellow in the Marquette Law School Lubar Center. [Contact me with questions here](https://law.marquette.edu/faculty-and-staff-directory/john-johnson).
+
+## Erata
+
+* on 11/8/2024 I noticed that Marathon County T Berlin Wards 1-2 had been corrected by Marathon County. The initial file I downloaded showed doubled vote values for each contest. See the [original PDF](https://github.com/jdjohn215/wisc-election-night-data/blob/main/2024-nov/raw/Marathon%202024-11-06%2004-00-15.pdf) here and [the correction here](https://github.com/jdjohn215/wisc-election-night-data/blob/main/2024-nov/raw/Marathon%202024-11-08%2012-54-55.pdf).
