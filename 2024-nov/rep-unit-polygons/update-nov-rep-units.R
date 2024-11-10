@@ -196,8 +196,15 @@ kenosha.replacements <- kenosha |>
   st_transform(crs = st_crs(rep.unit.polygons)) |>
   mutate(across(where(is.character), str_to_upper))
 ################################################################################
+# Sauk county has substantially different ward-to-rep unit configurations
+#   I rebuilt the county's reporting unit file elsewhere and read it here
+sauk.replacements <- st_read("2024-nov/rep-unit-polygons/sauk-rep-units.geojson")
+################################################################################
 # remove the outdated rep unit polygons and replace with the new ones
 updated.rep.units <- rep.unit.polygons |>
+  # replace the entire Sauk county
+  filter(county != "SAUK") |>
+  bind_rows(sauk.replacements) |>
   # replace the Madison wards
   filter(MCD_FIPS != "5502548000") |>
   rmapshaper::ms_erase(erase = madison.rep.units, remove_slivers = T) |>

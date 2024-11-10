@@ -1106,8 +1106,8 @@ read_manitowoc <- function(workbookpath, save_output = T){
 
 ################################################################################
 read_sauk <- function(workbookpath, save_output = T){
-  sheet1 <- googlesheets4::read_sheet(workbookpath, sheet = 1, col_names = F)
-  sheet2 <- googlesheets4::read_sheet(workbookpath, sheet = 2, col_names = F)
+  sheet1 <- googlesheets4::read_sheet(workbookpath, sheet = 1, col_names = F, col_types = "c")
+  sheet2 <- googlesheets4::read_sheet(workbookpath, sheet = 2, col_names = F, col_types = "c")
   stopifnot(all.equal(sheet1, sheet2))
   
   colnames <- sheet1[1:2,] |>
