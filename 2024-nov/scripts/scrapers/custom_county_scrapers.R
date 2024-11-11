@@ -2397,20 +2397,28 @@ read_shawano <- function(pdfpath, sheetvector = 1:72, save_output = T){
   
   #################################################
   # read c shawano from xlsx
-  cshawano.orig <- read_excel(latest_file("Shawano", "raw-export", T), sheet = 73,
+  cshawano.orig <- read_excel(latest_file("Shawano", "raw-export", T), sheet = 75,
                               col_names = F, .name_repair = "unique_quiet")
   tab.start <- min(which(str_detect(cshawano.orig$...1, "Vote for")))
   cshawano.2 <- cshawano.orig |>
-    filter(row_number() >= tab.start-1) |>
-    mutate(contest = if_else(lead(...1 == "Vote for 1"), ...1, NA),
-           contest = zoo::na.locf(contest)) |>
+    filter(row_number() >= tab.start-1,
+           ...1 != "Voter Turnout") |>
+    mutate(
+      contest = case_when(
+        str_detect(...1, "Vote for") ~ str_remove(...1, "Vote for 1"),
+        str_detect(lead(...1, 1), "Vote for", negate = T) ~ NA,
+        lead(...1, 1) == "Vote for 1" ~ ...1
+      ),
+      contest = na_if(contest, ""),
+      contest = zoo::na.locf(contest)) |>
     select(contest, candidate = 1, everything()) |>
     select(-c(...8, ...9)) |>
-    filter(contest != candidate)
+    filter(contest != candidate,
+           !is.na(...2))
   
   cshawano.3 <- cshawano.2 |>
     set_names(c("contest", "candidate", unlist(cshawano.2[1,][3:8]))) |>
-    filter(candidate != "Vote for 1") |>
+    filter(str_detect(`WDS 1 &2`, "WDS", negate = T)) |>
     pivot_longer(cols = -c(contest, candidate), names_to = "reporting_unit", values_to = "votes") |>
     mutate(reporting_unit = paste("C Shawano", reporting_unit))
   
@@ -2433,15 +2441,6 @@ read_shawano <- function(pdfpath, sheetvector = 1:72, save_output = T){
   
   
   ################################################
-  # # add T Fairbanks which isn't currently included in the municipalities but is in the totals
-  # tribble(
-  #   ~contest, ~candidate, ~votes,
-  #   "President of the United States", "Harris/Walz (DEM)", 7311 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "HARRIS")], na.rm = T),
-  #   "President of the United States", "TRUMP/VANCE (REP)", 15773 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "TRUMP")], na.rm = T),
-  #   "UNITED STATES SENATOR", "TAMMY BALDWIN (DEM)", 7529 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "BALDWIN")], na.rm = T),
-  #   "UNITED STATES SENATOR", "ERIC HOVDE (REP)", 14957 - sum(all.results.long$votes[str_detect(all.results.long$candidate, "HOVDE")], na.rm = T)
-  # )
-  #################################################
   # save the output with the timestamped file name
   if(save_output == T){
     write_csv(all.results.long, paste0("2024-nov/raw-processed/",
@@ -2453,3 +2452,97 @@ read_shawano <- function(pdfpath, sheetvector = 1:72, save_output = T){
   all.results.long
 }
 ################################################################################
+################################################################################
+read_iron <- function(workbookpath, save_output = T){
+  sheet.list <- excel_sheets(workbookpath)
+  sheet.list <- str_squish(sheet.list[which(sheet.list != "County")])
+  
+  read_sheet <- function(sheetindex){
+    sheet.orig <- read_excel(workbookpath, sheet = sheetindex, col_names = F,
+                             .name_repair = "unique_quiet") |>
+      janitor::remove_empty(c("cols","rows")) |>
+      mutate(across(where(is.character), ~str_replace(.x, "State Question", "STATE QUESTION")))
+    start.row <- which(sheet.orig$...1 == "FEDERAL") + 1
+    sheet.2 <-sheet.orig |>
+      filter(row_number() >= start.row)
+    if(sheet.list[sheetindex] != "Hurley"){
+      col1 <- sheet.2[,1:2] |>
+        rename(candidate = 1, votes = 2) |>
+        mutate(contest = if_else(candidate == str_to_upper(candidate), candidate, NA),
+               contest = zoo::na.locf(contest, na.rm = F)) |>
+        filter(contest != candidate,
+               votes != "TOTAL") |>
+        mutate(across(where(is.character), str_squish),
+               reporting_unit = sheet.list[sheetindex])
+      col2 <- sheet.2[,3:4] |>
+        rename(candidate = 1, votes = 2) |>
+        mutate(contest = if_else(candidate == str_to_upper(candidate), candidate, NA),
+               contest = zoo::na.locf(contest, na.rm = F)) |>
+        filter(contest != candidate,
+               votes != "TOTAL") |>
+        mutate(across(where(is.character), str_squish),
+               reporting_unit = sheet.list[sheetindex])
+      col3 <- sheet.2[,5:6] |>
+        rename(candidate = 1, votes = 2) |>
+        mutate(contest = if_else(candidate == str_to_upper(candidate), candidate, NA),
+               contest = zoo::na.locf(contest, na.rm = F)) |>
+        filter(contest != candidate,
+               votes != "TOTAL") |>
+        mutate(across(where(is.character), str_squish),
+               reporting_unit = sheet.list[sheetindex])
+      bind_rows(col1, col2, col3)
+    } else{
+      col1 <- sheet.2[,1:6] |>
+        select(-6) |>
+        rename(candidate = 1, W1=2, W2=3, W3=4, W4=5) |>
+        mutate(contest = if_else(candidate == str_to_upper(candidate), candidate, NA),
+               contest = zoo::na.locf(contest, na.rm = F)) |>
+        filter(contest != candidate) |>
+        mutate(across(where(is.character), str_squish),
+               reporting_unit = sheet.list[sheetindex])
+      col2 <- sheet.2[,7:12] |>
+        select(-6) |>
+        rename(candidate = 1, W1=2, W2=3, W3=4, W4=5) |>
+        mutate(contest = if_else(candidate == str_to_upper(candidate), candidate, NA),
+               contest = zoo::na.locf(contest, na.rm = F)) |>
+        filter(contest != candidate) |>
+        mutate(across(where(is.character), str_squish),
+               reporting_unit = sheet.list[sheetindex])
+      col3 <- sheet.2[,13:18] |>
+        select(-6) |>
+        rename(candidate = 1, W1=2, W2=3, W3=4, W4=5) |>
+        mutate(contest = if_else(candidate == str_to_upper(candidate), candidate, NA),
+               contest = zoo::na.locf(contest, na.rm = F)) |>
+        filter(contest != candidate) |>
+        mutate(across(where(is.character), str_squish),
+               reporting_unit = sheet.list[sheetindex])
+      
+      bind_rows(col1, col2, col3) |>
+        pivot_longer(cols = starts_with("W"), names_to = "ward", values_to = "votes") |>
+        mutate(reporting_unit = paste(reporting_unit, ward)) |>
+        select(-ward)
+    }
+    
+  }
+  
+  all.output <- map(.x = 1:length(sheet.list),
+                    .f = read_sheet) |>
+    list_rbind() |>
+    type_convert() |>
+    mutate(across(where(is.character), str_squish),
+           municipality = word(reporting_unit, 1, sep = " W[0-9]"),
+           ctv = if_else(municipality %in% c("Hurley","Montreal","HURLEY","MONTREAL"), "C", "T"),
+           county = "IRON",
+           across(where(is.character), str_to_upper))
+  
+  ################################################
+  # save the output with the timestamped file name
+  if(save_output == T){
+    write_csv(all.output, paste0("2024-nov/raw-processed/",
+                                 str_remove(word(workbookpath, -1, sep = "/"), ".pdf"), ".csv"))
+  }
+  
+  #################################################
+  # show the results (useful for quickly confirming that votes are numeric)
+  all.output
+}

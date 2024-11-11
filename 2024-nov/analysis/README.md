@@ -21,10 +21,10 @@ I provide reporting units for 69/72 counties. For the remaining counties of Gree
 
 I confirmed that my 2024 candidate totals match the values from the Associated Press as of Wednesday afternoon, with a few exceptions:
 
-* Shawano County's ward file appears to lack any values for the Town of Fairbanks, despite those totals apparently being reflected in the countywide statistics. This affects a very small number of votes.
 * I have 6 fewer votes in Washington County because AP is double-counting a City of Hartford which is reported by both Washington and Dodge counties
 * [Iowa](https://www.iowacounty.org/elections), Trump's total is 6631 not 6571 and Harris' is 7750 not 7730
 * [Marquette](https://www.co.marquette.wi.us/home/showpublisheddocument/18546), Hovde's total is 5629 not 5729
+* Some small discrepancies exist in the Trump totals in different files published by Iron County.
 
 ## Citations
 
@@ -34,3 +34,4 @@ You are free to use this data with attribution. Please cite me in my professiona
 
 * on 11/8/2024 I noticed that Marathon County T Berlin Wards 1-2 had been corrected by Marathon County. The initial file I downloaded showed doubled vote values for each contest. See the [original PDF](https://github.com/jdjohn215/wisc-election-night-data/blob/main/2024-nov/raw/Marathon%202024-11-06%2004-00-15.pdf) here and [the correction here](https://github.com/jdjohn215/wisc-election-night-data/blob/main/2024-nov/raw/Marathon%202024-11-08%2012-54-55.pdf).
 * on 11/9/2024 I added Sauk County reporting unit data
+* on 11/11/2024 I added Green County reporting units, Iron County reporting units and official Shawano County results. The latter includes the Town of Fairbanks which was previously ommitted from the election night reporting unit file.

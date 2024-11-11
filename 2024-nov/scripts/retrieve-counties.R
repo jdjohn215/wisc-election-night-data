@@ -91,7 +91,7 @@ read_forest(latest_file("Forest", "raw-export", T))
 read_grant(latest_file("Grant", "raw", T))
 
 #download_returns("Green")
-#pdf_reader_d(latest_file("Green", "raw-export", T), 1, 5) # Lacks reporting units
+pdf_reader_b(latest_file("Green", "raw-export", T), c(1:4,6:7,9:48)) # Lacks reporting units
 
 #download_returns("Green Lake")
 read_greenlake(latest_file("Green Lake", "raw-export", T), sheetvector = 1:4)
@@ -99,7 +99,8 @@ read_greenlake(latest_file("Green Lake", "raw-export", T), sheetvector = 1:4)
 # Iowa - download one drive XLSX files and manually combine into a single workbook, each file on its own sheet
 read_iowa(latest_file("Iowa", "raw", T))
 
-# Iron - reporting unit data probably not available
+# Iron - reporting unit data retrieved via email
+read_iron(latest_file("Iron", "raw", T))
 
 #download_returns("Jackson")
 read_jackson(latest_file("Jackson", "raw-export", T)) # had to manually edit
@@ -193,7 +194,7 @@ read_sauk(file.directory$file_type[file.directory$county == "Sauk"])
 read_sawyer(latest_file("Sawyer", "raw-export", T))
 
 #download_returns("Shawano")
-read_shawano(latest_file("Shawano", "raw", T), 1:72)
+read_shawano(latest_file("Shawano", "raw", T), 1:74)
 
 #download_returns("Sheboygan") # likely must download manually
 #pdf_reader_d(latest_file("Sheboygan", "raw-export", T), 5, 25) # needs some work

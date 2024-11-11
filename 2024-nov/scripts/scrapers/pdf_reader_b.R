@@ -80,6 +80,7 @@ pdf_reader_b <- function(workbookpath, sheetvector, save_output = T){
            municipality != "DOOR COUNTY - TOTAL",
            municipality != "COUNTY - TOTAL",
            municipality != "ELECTION DAY",
+           str_detect(municipality, "INSTRUCTIONS - TOTAL|STATEWIDE - TOTAL", negate = T),
            ! candidate %in% c("TOTAL VOTES", "TIMES CAST", "REGISTERED VOTERS"))
   
   #################################################
