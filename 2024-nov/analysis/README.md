@@ -24,7 +24,7 @@ I confirmed that my 2024 candidate totals match the values from the Associated P
 * I have 6 fewer votes in Washington County because AP is double-counting a City of Hartford which is reported by both Washington and Dodge counties
 * [Iowa](https://www.iowacounty.org/elections), Trump's total is 6631 not 6571 and Harris' is 7750 not 7730
 * [Marquette](https://www.co.marquette.wi.us/home/showpublisheddocument/18546), Hovde's total is 5629 not 5729
-* Some small discrepancies exist in the Trump totals in different files published by Iron County.
+* Iron County's correct total for Trump is 2,557. The Town of Pence reported the wrong total on election night, per the Iron Co clerk.
 
 ## Citations
 
