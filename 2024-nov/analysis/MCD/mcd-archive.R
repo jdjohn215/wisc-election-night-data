@@ -84,7 +84,7 @@ muni.votes.2024 <- muni.votes |>
 
 muni.archive.complete <- muni.archive |>
   filter(party %in% c("DEMOCRATIC", "REPUBLICAN"),
-         office %in% c("PRESIDENT", "US SENATOR", "GOVERNOR")) |>
+         office %in% c("PRESIDENT", "US SENATE", "GOVERNOR")) |>
   select(muni_fips, municipality, ctv, year, office, party, total_votes, votes) |>
   mutate(across(contains("fips"), as.character)) |>
   bind_rows(muni.votes.2024)

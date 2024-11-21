@@ -35,3 +35,4 @@ You are free to use this data with attribution. Please cite me in my professiona
 * on 11/8/2024 I noticed that Marathon County T Berlin Wards 1-2 had been corrected by Marathon County. The initial file I downloaded showed doubled vote values for each contest. See the [original PDF](https://github.com/jdjohn215/wisc-election-night-data/blob/main/2024-nov/raw/Marathon%202024-11-06%2004-00-15.pdf) here and [the correction here](https://github.com/jdjohn215/wisc-election-night-data/blob/main/2024-nov/raw/Marathon%202024-11-08%2012-54-55.pdf).
 * on 11/9/2024 I added Sauk County reporting unit data
 * on 11/11/2024 I added Green County reporting units, Iron County reporting units and official Shawano County results. The latter includes the Town of Fairbanks which was previously ommitted from the election night reporting unit file.
+* on 11/21/2024 I updated the La Crosse County results with the county certified version.
