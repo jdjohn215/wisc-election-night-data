@@ -1,3 +1,8 @@
 WI_Municipal_Wards_(July_2024).geojson
 .DS_Store
 sauk-wards-to-rep-units.R
+1990_to_2000_Election_Data_with_2020_Wards.csv
+2002_to_2010_Election_Data_with_2020_Wards.csv
+allocate-votes-into-rep-unit-polygons_v2.R
+rep-units-2024-with-votes-1990-2022.csv
+rep-unit-polygons-with-votes-1990-2022.geojson
