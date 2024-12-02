@@ -1,3 +1,5 @@
+**The files in this directory have been superceded by the release of official, [certified election results](https://elections.wi.gov/election-result/2024-general-election-results) from the Wisconsin Elections Commission on November 29, 2024. I have cleaned and processed those results, providing GIS boundaries and integrated past election results in the [`wec` directory](https://github.com/jdjohn215/wisc-election-night-data/tree/main/2024-nov/wec) of this repository.**
+
 # Wisconsin 2024 reporting unit polygons
 
 The file `election-results-2012-2024.geojson` contains polygons corresponding to the reporting units used in Wisconsin's November 2024 general elections. Reporting units are necessarily entirely within a single minor civil division, so I have added the corresponding `MCD_FIPS` code to each record. The wards include the (to my knowledge) complete, unofficial election night results from each reporting unit for Trump (PREREP24), Harris (PREDEM24), Baldwin (USSDEM24), and Hovde (USSREP24).
