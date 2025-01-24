@@ -41,6 +41,9 @@ reporting.units.to.wards <- all.results |>
   rowwise() |>
   mutate(wards = expand_dash(wards)) |>
   ungroup() |>
+  # munge 1/24/2025: manually alter the wards assigned to CITY OF MEQUON WARDS 9-11A, as it should only be 9, 11A
+  #   see: https://www.cityofmequonwi.gov/media/23176
+  mutate(wards = replace(wards, reporting_unit == "CITY OF MEQUON WARDS 9-11A", "9,11A")) |>
   separate(wards, into = paste0("w", 1:21), sep = ",") |>
   pivot_longer(cols = starts_with("w"), names_to = "drop", values_to = "ward") |>
   filter(!is.na(ward)) |>
